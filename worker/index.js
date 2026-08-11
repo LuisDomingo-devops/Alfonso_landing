@@ -1,51 +1,64 @@
+import { handleApiRequest } from "./router.js";
+import {
+    getCorsHeaders,
+    handleCorsPreflight
+} from "./cors.js";
+import { handleApiError } from "./errors.js";
+import { applySecurityHeaders } from "./security.js";
+
 const API_PREFIX = "/api";
-
-function jsonResponse(data, status = 200) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8",
-            "Cache-Control": "no-store"
-        }
-    });
-}
-
-async function handleApiRequest(request) {
-    const url = new URL(request.url);
-
-    if (request.method !== "GET" && url.pathname === "/api/health") {
-        return jsonResponse(
-            {
-                error: "Method not allowed"
-            },
-            405
-        );
-    }
-
-    if (url.pathname === "/api/health") {
-        return jsonResponse({
-            status: "ok",
-            service: "alfonso-landing",
-            version: "1.0.0"
-        });
-    }
-
-    return jsonResponse(
-        {
-            error: "API endpoint not found"
-        },
-        404
-    );
-}
 
 export default {
     async fetch(request, env) {
-        const url = new URL(request.url);
+        try {
+            const url = new URL(request.url);
 
-        if (url.pathname.startsWith(`${API_PREFIX}/`)) {
-            return handleApiRequest(request);
+            if (url.pathname.startsWith(`${API_PREFIX}/`)) {
+                if (request.method === "OPTIONS") {
+                    const preflightResponse =
+                        handleCorsPreflight(request);
+
+                    if (preflightResponse) {
+                        return applySecurityHeaders(
+                            preflightResponse
+                        );
+                    }
+
+                    return new Response(null, {
+                        status: 403
+                    });
+                }
+
+                const response = await handleApiRequest(request);
+
+                const corsHeaders =
+                    getCorsHeaders(request);
+
+                const responseWithCors =
+                    new Response(response.body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: {
+                            ...Object.fromEntries(
+                                response.headers
+                            ),
+                            ...corsHeaders
+                        }
+                    });
+
+                return applySecurityHeaders(
+                    responseWithCors
+                );
+            }
+
+            const assetResponse =
+                await env.ASSETS.fetch(request);
+
+            return applySecurityHeaders(assetResponse);
+        } catch (error) {
+            return applySecurityHeaders(
+                handleApiError(error)
+            );
         }
-
-        return env.ASSETS.fetch(request);
     }
 };
