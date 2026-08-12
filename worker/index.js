@@ -29,7 +29,10 @@ export default {
                     });
                 }
 
-                const response = await handleApiRequest(request);
+                const response = await handleApiRequest(
+                    request,
+                    env
+                );
 
                 const corsHeaders =
                     getCorsHeaders(request);

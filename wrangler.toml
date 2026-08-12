@@ -6,5 +6,10 @@ compatibility_date = "2026-08-11"
 directory = "./public"
 binding = "ASSETS"
 
+[[d1_databases]]
+binding = "alfonso_leads"
+database_name = "alfonso-leads"
+database_id = "b050f0b4-1f4c-4067-9595-9f547144f49b"
+
 [observability]
 enabled = true
