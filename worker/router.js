@@ -18,37 +18,21 @@ import {
     handleAdminLeadDetail
 } from "./adminLeads.js";
 
+import {
+    processInvoiceText
+} from "./invoice.js";
+
 const MAX_BODY_SIZE =
     10 * 1024;
+
+const MAX_INVOICE_TEXT_SIZE =
+    500_000;
 
 const RATE_LIMIT_WINDOW_SECONDS =
     60;
 
 const RATE_LIMIT_MAX_REQUESTS =
     5;
-
-async function handleHealth(
-    request
-) {
-    if (
-        request.method !== "GET"
-    ) {
-        return errorResponse(
-            "METHOD_NOT_ALLOWED",
-            "Method not allowed.",
-            405,
-            {
-                Allow: "GET"
-            }
-        );
-    }
-
-    return successResponse({
-        status: "ok",
-        service: "alfonso-landing",
-        version: "1.2.0"
-    });
-}
 
 function getClientIp(
     request
@@ -109,7 +93,7 @@ async function checkRateLimit(
     const windowStart =
         Math.floor(
             now /
-                RATE_LIMIT_WINDOW_SECONDS
+            RATE_LIMIT_WINDOW_SECONDS
         ) *
         RATE_LIMIT_WINDOW_SECONDS;
 
@@ -143,7 +127,7 @@ async function checkRateLimit(
         const requestCount =
             Number(
                 result?.request_count ||
-                    1
+                1
             );
 
         return {
@@ -153,15 +137,12 @@ async function checkRateLimit(
 
             retryAfter:
                 RATE_LIMIT_WINDOW_SECONDS -
-                (now -
-                    windowStart)
+                (
+                    now -
+                    windowStart
+                )
         };
-    } catch (error) {
-        console.error(
-            "Rate limit error:",
-            error
-        );
-
+    } catch {
         return {
             allowed: true,
             retryAfter: 0
@@ -169,12 +150,171 @@ async function checkRateLimit(
     }
 }
 
+async function handleInvoiceDemo(
+    request,
+    env
+) {
+    if (
+        request.method !==
+        "POST"
+    ) {
+        return errorResponse(
+            "METHOD_NOT_ALLOWED",
+            "Method not allowed.",
+            405,
+            {
+                Allow: "POST"
+            }
+        );
+    }
+
+    const contentType =
+        request.headers.get(
+            "Content-Type"
+        ) || "";
+
+    if (
+        !contentType
+            .toLowerCase()
+            .startsWith(
+                "application/json"
+            )
+    ) {
+        return errorResponse(
+            "UNSUPPORTED_MEDIA_TYPE",
+            "Content-Type must be application/json.",
+            415
+        );
+    }
+
+    const rateLimit =
+        await checkRateLimit(
+            request,
+            env
+        );
+
+    if (
+        !rateLimit.allowed
+    ) {
+        return errorResponse(
+            "RATE_LIMITED",
+            "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+            429,
+            {
+                "Retry-After":
+                    String(
+                        rateLimit.retryAfter
+                    )
+            }
+        );
+    }
+
+    let payload;
+
+    try {
+        payload =
+            await request.json();
+    } catch {
+        return errorResponse(
+            "INVALID_JSON",
+            "Request body must contain valid JSON.",
+            400
+        );
+    }
+
+    if (
+        typeof payload?.text !==
+        "string"
+    ) {
+        return errorResponse(
+            "INVALID_INVOICE",
+            "No se ha recibido texto de factura.",
+            400
+        );
+    }
+
+    const text =
+        payload.text.trim();
+
+    if (
+        !text
+    ) {
+        return errorResponse(
+            "EMPTY_INVOICE",
+            "La factura no contiene texto procesable.",
+            400
+        );
+    }
+
+    if (
+        text.length >
+        MAX_INVOICE_TEXT_SIZE
+    ) {
+        return errorResponse(
+            "PAYLOAD_TOO_LARGE",
+            "La factura supera el tamaño máximo permitido.",
+            413
+        );
+    }
+
+    try {
+        const result =
+            processInvoiceText(
+                text
+            );
+
+        return successResponse(
+            result,
+            200
+        );
+    } catch (error) {
+        console.error(
+            "Invoice processing error:",
+            error
+        );
+
+        return errorResponse(
+            "INVOICE_PROCESSING_ERROR",
+            error?.message ||
+                "No se ha podido procesar la factura.",
+            422
+        );
+    }
+}
+
+async function handleHealth(
+    request
+) {
+    if (
+        request.method !==
+        "GET"
+    ) {
+        return errorResponse(
+            "METHOD_NOT_ALLOWED",
+            "Method not allowed.",
+            405,
+            {
+                Allow: "GET"
+            }
+        );
+    }
+
+    return successResponse({
+        status: "ok",
+        service:
+            "alfonso-landing",
+        version:
+            "1.3.0"
+    });
+}
+
 async function handleLead(
     request,
     env
 ) {
     if (
-        request.method !== "POST"
+        request.method !==
+        "POST"
     ) {
         return errorResponse(
             "METHOD_NOT_ALLOWED",
@@ -241,7 +381,9 @@ async function handleLead(
         }
 
         payload =
-            JSON.parse(rawBody);
+            JSON.parse(
+                rawBody
+            );
     } catch {
         return errorResponse(
             "INVALID_JSON",
@@ -251,9 +393,13 @@ async function handleLead(
     }
 
     const validation =
-        validateLead(payload);
+        validateLead(
+            payload
+        );
 
-    if (!validation.valid) {
+    if (
+        !validation.valid
+    ) {
         return errorResponse(
             validation.reason ===
                 "HONEYPOT"
@@ -273,7 +419,9 @@ async function handleLead(
             env
         );
 
-    if (!rateLimit.allowed) {
+    if (
+        !rateLimit.allowed
+    ) {
         return errorResponse(
             "RATE_LIMITED",
             "Too many requests. Please try again later.",
@@ -312,7 +460,8 @@ async function handleLead(
     } catch (error) {
         const errorMessage =
             String(
-                error?.message || ""
+                error?.message ||
+                ""
             ).toLowerCase();
 
         if (
@@ -381,6 +530,16 @@ export async function handleApiRequest(
 
     if (
         url.pathname ===
+        "/api/invoice-demo"
+    ) {
+        return handleInvoiceDemo(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
         "/api/admin/login"
     ) {
         return handleAdminLogin(
@@ -424,7 +583,9 @@ export async function handleApiRequest(
             /^\/api\/admin\/leads\/(\d+)$/
         );
 
-    if (leadIdMatch) {
+    if (
+        leadIdMatch
+    ) {
         return handleAdminLeadDetail(
             request,
             env,
