@@ -1,6 +1,12 @@
 ﻿name = "alfonso-landing"
+
 main = "worker/index.js"
-compatibility_date = "2026-08-11"
+
+compatibility_date = "2026-08-14"
+
+compatibility_flags = [
+    "nodejs_compat"
+]
 
 [assets]
 directory = "./public"
@@ -13,3 +19,28 @@ database_id = "b050f0b4-1f4c-4067-9595-9f547144f49b"
 
 [observability]
 enabled = true
+
+[[containers]]
+class_name = "InvoiceContainer"
+image = "./invoice_backend/Dockerfile"
+max_instances = 3
+instance_type = "basic"
+rollout_step_percentage = [
+    10,
+    100
+]
+
+[[durable_objects.bindings]]
+name = "INVOICE_CONTAINER"
+class_name = "InvoiceContainer"
+
+[[migrations]]
+tag = "invoice-container-v1"
+
+new_sqlite_classes = [
+    "InvoiceContainer"
+]
+
+[vars]
+
+GEMINI_MODEL_NAME = "gemini-3.1-flash-lite"

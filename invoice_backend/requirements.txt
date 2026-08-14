@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+python-multipart
+google-genai
+python-dotenv
+pdfplumber
+pypdf
+pdf2image
+pytesseract
+Pillow

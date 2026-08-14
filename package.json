@@ -1,0 +1,17 @@
+{
+  "name": "alfonso-landing",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:immediate": "wrangler deploy --containers-rollout=immediate"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.2.0"
+  }
+}

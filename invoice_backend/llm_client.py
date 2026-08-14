@@ -67,10 +67,8 @@ class GeminiClient:
             build_llm_invoice_prompt
         )
 
-        prompt = (
-            build_llm_invoice_prompt(
-                text
-            )
+        prompt = build_llm_invoice_prompt(
+            text
         )
 
         response = self._generate(
@@ -106,10 +104,8 @@ class GeminiClient:
             build_response_prompt
         )
 
-        prompt = (
-            build_response_prompt(
-                invoice
-            )
+        prompt = build_response_prompt(
+            invoice
         )
 
         return self._generate(

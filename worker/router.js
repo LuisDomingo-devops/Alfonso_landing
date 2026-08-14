@@ -18,6 +18,11 @@ import {
     handleAdminLeadDetail
 } from "./adminLeads.js";
 
+import {
+    getContainer
+} from "@cloudflare/containers";
+
+
 const MAX_BODY_SIZE =
     10 * 1024;
 
@@ -27,7 +32,9 @@ const RATE_LIMIT_WINDOW_SECONDS =
 const RATE_LIMIT_MAX_REQUESTS =
     5;
 
+
 function getClientIp(request) {
+
     return (
         request.headers.get(
             "CF-Connecting-IP"
@@ -39,7 +46,9 @@ function getClientIp(request) {
     );
 }
 
+
 async function hashValue(value) {
+
     const encoder =
         new TextEncoder();
 
@@ -64,10 +73,12 @@ async function hashValue(value) {
         .join("");
 }
 
+
 async function checkRateLimit(
     request,
     env
 ) {
+
     const ip =
         getClientIp(request);
 
@@ -82,11 +93,12 @@ async function checkRateLimit(
     const windowStart =
         Math.floor(
             now /
-                RATE_LIMIT_WINDOW_SECONDS
+            RATE_LIMIT_WINDOW_SECONDS
         ) *
         RATE_LIMIT_WINDOW_SECONDS;
 
     try {
+
         const result =
             await env.alfonso_leads
                 .prepare(
@@ -130,7 +142,9 @@ async function checkRateLimit(
                     windowStart
                 )
         };
+
     } catch {
+
         return {
             allowed: true,
             retryAfter: 0
@@ -138,13 +152,16 @@ async function checkRateLimit(
     }
 }
 
+
 async function handleHealth(
     request
 ) {
+
     if (
         request.method !==
         "GET"
     ) {
+
         return errorResponse(
             "METHOD_NOT_ALLOWED",
             "Method not allowed.",
@@ -160,18 +177,21 @@ async function handleHealth(
         service:
             "alfonso-landing",
         version:
-            "2.0.0"
+            "3.0.0"
     });
 }
+
 
 async function handleLead(
     request,
     env
 ) {
+
     if (
         request.method !==
         "POST"
     ) {
+
         return errorResponse(
             "METHOD_NOT_ALLOWED",
             "Method not allowed.",
@@ -195,6 +215,7 @@ async function handleLead(
                 "application/json"
             )
     ) {
+
         return errorResponse(
             "UNSUPPORTED_MEDIA_TYPE",
             "Content-Type must be application/json.",
@@ -212,6 +233,7 @@ async function handleLead(
         Number(contentLength) >
             MAX_BODY_SIZE
     ) {
+
         return errorResponse(
             "PAYLOAD_TOO_LARGE",
             "Request body is too large.",
@@ -222,6 +244,7 @@ async function handleLead(
     let payload;
 
     try {
+
         const rawBody =
             await request.text();
 
@@ -229,6 +252,7 @@ async function handleLead(
             rawBody.length >
             MAX_BODY_SIZE
         ) {
+
             return errorResponse(
                 "PAYLOAD_TOO_LARGE",
                 "Request body is too large.",
@@ -240,7 +264,9 @@ async function handleLead(
             JSON.parse(
                 rawBody
             );
+
     } catch {
+
         return errorResponse(
             "INVALID_JSON",
             "Request body must contain valid JSON.",
@@ -256,6 +282,7 @@ async function handleLead(
     if (
         !validation.valid
     ) {
+
         return errorResponse(
             validation.reason ===
                 "HONEYPOT"
@@ -278,6 +305,7 @@ async function handleLead(
     if (
         !rateLimit.allowed
     ) {
+
         return errorResponse(
             "RATE_LIMITED",
             "Too many requests. Please try again later.",
@@ -292,6 +320,7 @@ async function handleLead(
     }
 
     try {
+
         await env.alfonso_leads
             .prepare(
                 `
@@ -313,11 +342,12 @@ async function handleLead(
                 "landing_beta"
             )
             .run();
+
     } catch (error) {
+
         const errorMessage =
             String(
-                error?.message ||
-                    ""
+                error?.message || ""
             ).toLowerCase();
 
         if (
@@ -328,6 +358,7 @@ async function handleLead(
                 "constraint"
             )
         ) {
+
             return successResponse(
                 {
                     message:
@@ -358,29 +389,92 @@ async function handleLead(
     );
 }
 
+
 /*
- * Invoice processing is deliberately NOT implemented
- * inside the Cloudflare Worker.
+ * ============================================================
+ * INVOICE BACKEND
+ * ============================================================
  *
- * The Worker must never receive, parse, OCR or anonymize
- * the original invoice.
+ * La factura NO se procesa en JavaScript.
  *
- * Invoice processing belongs to the Python/FastAPI backend:
+ * El Worker recibe la petición y la entrega
+ * al Container de Python.
  *
- * invoice
- *    -> local extraction
- *    -> local anonymization
- *    -> Gemini
- *    -> response
+ * Flujo:
  *
- * The frontend must call the Python backend directly
- * for invoice processing.
+ * factura
+ *    ↓
+ * Cloudflare Worker
+ *    ↓
+ * Python / FastAPI
+ *    ↓
+ * extracción LOCAL
+ *    ↓
+ * anonimización LOCAL
+ *    ↓
+ * Gemini
+ *    ↓
+ * respuesta
  */
+
+
+async function handleInvoiceDemo(
+    request,
+    env
+) {
+
+    if (
+        request.method !==
+        "POST"
+    ) {
+
+        return errorResponse(
+            "METHOD_NOT_ALLOWED",
+            "Method not allowed.",
+            405,
+            {
+                Allow: "POST"
+            }
+        );
+    }
+
+    const contentType =
+        request.headers.get(
+            "Content-Type"
+        ) || "";
+
+    if (
+        !contentType
+            .toLowerCase()
+            .startsWith(
+                "multipart/form-data"
+            )
+    ) {
+
+        return errorResponse(
+            "UNSUPPORTED_MEDIA_TYPE",
+            "Invoice endpoint requires multipart/form-data.",
+            415
+        );
+    }
+
+    const container =
+        getContainer(
+            env.INVOICE_CONTAINER,
+            "alfonso-invoice"
+        );
+
+    return container.fetch(
+        request
+    );
+}
+
 
 export async function handleApiRequest(
     request,
     env
 ) {
+
     const url =
         new URL(request.url);
 
@@ -388,6 +482,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/health"
     ) {
+
         return handleHealth(
             request
         );
@@ -397,6 +492,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/leads"
     ) {
+
         return handleLead(
             request,
             env
@@ -407,10 +503,10 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/invoice-demo"
     ) {
-        return errorResponse(
-            "INVOICE_BACKEND_REQUIRED",
-            "Invoice processing is handled by the Python backend.",
-            410
+
+        return handleInvoiceDemo(
+            request,
+            env
         );
     }
 
@@ -418,6 +514,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/admin/login"
     ) {
+
         return handleAdminLogin(
             request,
             env
@@ -428,6 +525,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/admin/logout"
     ) {
+
         return handleAdminLogout(
             request,
             env
@@ -438,6 +536,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/admin/me"
     ) {
+
         return handleAdminMe(
             request,
             env
@@ -448,6 +547,7 @@ export async function handleApiRequest(
         url.pathname ===
         "/api/admin/leads"
     ) {
+
         return handleAdminLeadsList(
             request,
             env
@@ -462,6 +562,7 @@ export async function handleApiRequest(
     if (
         leadIdMatch
     ) {
+
         return handleAdminLeadDetail(
             request,
             env,

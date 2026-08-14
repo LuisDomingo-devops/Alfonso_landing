@@ -1,17 +1,19 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from invoice_processor import process_invoice
-from dotenv import load_dotenv
+
 
 load_dotenv()
 
+
 app = FastAPI(
-    title="Alfonso Invoice Demo",
-    version="1.0.0",
+    title="Alfonso Invoice Backend",
+    version="2.0.0",
 )
 
 
@@ -19,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -41,15 +43,18 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 async def health():
     return {
         "status": "ok",
-        "service": "alfonso-invoice-demo",
+        "service": "alfonso-invoice-backend",
+        "version": "2.0.0",
     }
 
 
 @app.post("/api/invoice-demo")
 async def invoice_demo(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
 ):
-    filename = file.filename or "documento"
+    filename = Path(
+        file.filename or "documento"
+    ).name
 
     extension = Path(
         filename
@@ -79,27 +84,28 @@ async def invoice_demo(
         )
 
     with TemporaryDirectory(
-        prefix="alfonso_demo_"
+        prefix="alfonso_invoice_"
     ) as temp_dir:
 
-        path = (
-            Path(temp_dir) /
-            filename
-        )
+        path = Path(temp_dir) / filename
 
         path.write_bytes(content)
 
         try:
-            result = process_invoice(
+            return process_invoice(
                 path=path,
                 filename=filename,
             )
 
-            return result
-
         except ValueError as exc:
             raise HTTPException(
                 status_code=422,
+                detail=str(exc),
+            ) from exc
+
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=502,
                 detail=str(exc),
             ) from exc
 

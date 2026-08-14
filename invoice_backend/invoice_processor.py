@@ -19,14 +19,19 @@ try:
 except ImportError:
     pytesseract = None
 
-from tax_engine import TaxEngine
 from llm_client import GeminiClient
+from tax_engine import TaxEngine
 
 
 NIF_PATTERN = re.compile(
     r"\b[A-HJ-NP-SUVWXY\d]"
     r"\d{7}"
     r"[A-Z\d]\b",
+    re.IGNORECASE,
+)
+
+DNI_PATTERN = re.compile(
+    r"\b\d{8}[A-Z]\b",
     re.IGNORECASE,
 )
 
@@ -50,9 +55,34 @@ PHONE_PATTERN = re.compile(
     r"(?!\d)"
 )
 
+POSTAL_CODE_PATTERN = re.compile(
+    r"(?<!\d)\d{5}(?!\d)"
+)
+
+ADDRESS_LABEL_PATTERN = re.compile(
+    r"^\s*"
+    r"(dirección|direccion|domicilio|"
+    r"domicilio fiscal|calle|avenida|"
+    r"avda\.?|c\/|cp|código postal|"
+    r"codigo postal)"
+    r"\s*[:\-].*$",
+    re.IGNORECASE,
+)
+
+PERSON_LABEL_PATTERN = re.compile(
+    r"^\s*"
+    r"(cliente|titular|contacto|"
+    r"persona de contacto|"
+    r"nombre|razón social|razon social|"
+    r"emisor|receptor|proveedor|"
+    r"destinatario)"
+    r"\s*[:\-].*$",
+    re.IGNORECASE,
+)
+
 
 def extract_pdf_text(
-    path: Path
+    path: Path,
 ) -> tuple[str, str]:
 
     text = ""
@@ -66,18 +96,12 @@ def extract_pdf_text(
 
                 for page in pdf.pages:
 
-                    page_text = (
-                        page.extract_text()
-                    )
+                    page_text = page.extract_text()
 
                     if page_text:
-                        pages.append(
-                            page_text
-                        )
+                        pages.append(page_text)
 
-                text = "\n".join(
-                    pages
-                ).strip()
+                text = "\n".join(pages).strip()
 
         except Exception:
             text = ""
@@ -85,37 +109,27 @@ def extract_pdf_text(
     if text:
         return text, "pdf-text"
 
-
     if pypdf is not None:
 
         try:
-            reader = pypdf.PdfReader(
-                str(path)
-            )
+            reader = pypdf.PdfReader(str(path))
 
             pages = []
 
             for page in reader.pages:
 
-                page_text = (
-                    page.extract_text()
-                )
+                page_text = page.extract_text()
 
                 if page_text:
-                    pages.append(
-                        page_text
-                    )
+                    pages.append(page_text)
 
-            text = "\n".join(
-                pages
-            ).strip()
+            text = "\n".join(pages).strip()
 
         except Exception:
             text = ""
 
     if text:
         return text, "pdf-text"
-
 
     if pytesseract is None:
 
@@ -126,9 +140,7 @@ def extract_pdf_text(
 
     try:
 
-        from pdf2image import (
-            convert_from_path
-        )
+        from pdf2image import convert_from_path
 
         images = convert_from_path(
             str(path),
@@ -139,21 +151,15 @@ def extract_pdf_text(
 
         for image in images:
 
-            page_text = (
-                pytesseract.image_to_string(
-                    image,
-                    lang="spa+eng",
-                )
+            page_text = pytesseract.image_to_string(
+                image,
+                lang="spa+eng",
             )
 
             if page_text:
-                pages.append(
-                    page_text
-                )
+                pages.append(page_text)
 
-        text = "\n".join(
-            pages
-        ).strip()
+        text = "\n".join(pages).strip()
 
     except Exception as exc:
 
@@ -163,6 +169,7 @@ def extract_pdf_text(
         ) from exc
 
     if not text:
+
         raise ValueError(
             "No se ha encontrado texto "
             "en el documento."
@@ -172,7 +179,7 @@ def extract_pdf_text(
 
 
 def extract_image_text(
-    path: Path
+    path: Path,
 ) -> tuple[str, str]:
 
     if pytesseract is None:
@@ -185,11 +192,9 @@ def extract_image_text(
 
         image = Image.open(path)
 
-        text = (
-            pytesseract.image_to_string(
-                image,
-                lang="spa+eng",
-            )
+        text = pytesseract.image_to_string(
+            image,
+            lang="spa+eng",
         ).strip()
 
     except Exception as exc:
@@ -210,12 +215,10 @@ def extract_image_text(
 
 
 def extract_text(
-    path: Path
+    path: Path,
 ) -> tuple[str, str]:
 
-    extension = (
-        path.suffix.lower()
-    )
+    extension = path.suffix.lower()
 
     if extension == ".pdf":
         return extract_pdf_text(path)
@@ -235,10 +238,56 @@ def extract_text(
 
 
 def anonymize_text(
-    text: str
+    text: str,
 ) -> str:
+    """
+    Anonimización LOCAL.
 
-    result = text
+    Esta función se ejecuta antes de cualquier
+    comunicación con Gemini.
+
+    El documento original nunca se envía a Gemini.
+    """
+
+    lines = text.splitlines()
+
+    anonymized_lines = []
+
+    for line in lines:
+
+        stripped = line.strip()
+
+        if not stripped:
+            anonymized_lines.append("")
+            continue
+
+        if ADDRESS_LABEL_PATTERN.match(stripped):
+            anonymized_lines.append(
+                "[DIRECCION_ANONIMIZADA]"
+            )
+            continue
+
+        if PERSON_LABEL_PATTERN.match(stripped):
+
+            label = stripped.split(
+                ":",
+                1,
+            )[0].strip()
+
+            anonymized_lines.append(
+                f"{label}: [PERSONA_ANONIMIZADA]"
+            )
+
+            continue
+
+        anonymized_lines.append(line)
+
+    result = "\n".join(anonymized_lines)
+
+    result = DNI_PATTERN.sub(
+        "[DNI_ANONIMIZADO]",
+        result,
+    )
 
     result = NIF_PATTERN.sub(
         "[NIF_ANONIMIZADO]",
@@ -260,6 +309,11 @@ def anonymize_text(
         result,
     )
 
+    result = POSTAL_CODE_PATTERN.sub(
+        "[CP_ANONIMIZADO]",
+        result,
+    )
+
     return result
 
 
@@ -272,16 +326,26 @@ Eres Alfonso, un asistente especializado
 en administración, fiscalidad y contabilidad
 para autónomos y pequeñas empresas en España.
 
-Has recibido el contenido anonimizado de un
-documento que puede ser una factura.
+Has recibido información EXTRAÍDA Y
+ANONIMIZADA LOCALMENTE de una factura.
 
-Debes entender el documento, no limitarte
-a buscar números.
+IMPORTANTE:
+
+- No recibes la factura original.
+- Los datos personales han sido
+  anonimizados antes de llegar a ti.
+- No intentes reconstruir identidades.
+- No inventes información.
+- No conviertas marcadores anonimizados
+  en nombres reales.
+
+Debes interpretar el contenido disponible.
 
 Analiza:
 
-- quién emite el documento
-- quién lo recibe
+- tipo de documento
+- emisor, si aparece anonimizado
+- receptor, si aparece anonimizado
 - número de factura
 - fecha
 - concepto
@@ -293,18 +357,16 @@ Analiza:
 - importe de IRPF
 - total
 - naturaleza de la operación
-- si representa un ingreso o un gasto
+- ingreso o gasto
+- categoría
 - tratamiento fiscal
 - tratamiento contable
-- trimestre fiscal correspondiente
-
-No inventes información.
+- trimestre correspondiente
 
 Si un dato no aparece claramente,
 devuelve null.
 
-Devuelve EXCLUSIVAMENTE JSON válido
-con esta estructura:
+Devuelve EXCLUSIVAMENTE JSON válido:
 
 {{
   "document_type": "factura",
@@ -333,7 +395,7 @@ con esta estructura:
   "confidence": 0.0
 }}
 
-DOCUMENTO:
+DOCUMENTO ANONIMIZADO:
 
 {text}
 """
@@ -349,29 +411,32 @@ Eres Alfonso.
 Has analizado una factura de un autónomo
 o pequeña empresa española.
 
-Debes explicar al usuario qué has entendido
-y qué debería hacerse con ese documento.
+Explica al usuario qué has entendido
+y qué debería revisar.
 
 No inventes datos.
 
-Explica de forma clara y profesional:
+Explica:
 
 1. Qué documento es.
 2. Qué operación representa.
 3. Cuál es el concepto.
 4. Los importes relevantes.
 5. Si es ingreso o gasto.
-6. Qué tratamiento fiscal corresponde.
-7. Cómo se registraría conceptualmente
-   en los libros contables.
-8. A qué trimestre corresponde.
-9. Si existe algún dato que debería revisarse.
+6. El tratamiento fiscal detectado.
+7. El tratamiento contable propuesto.
+8. El trimestre correspondiente.
+9. Qué datos deberían revisarse.
 
-No des asesoramiento jurídico absoluto.
-Si existe incertidumbre, indícala.
+Si existe incertidumbre,
+indícala claramente.
+
+No presentes una inferencia
+como un hecho confirmado.
 
 La respuesta debe parecer una explicación
-de Alfonso a un cliente, no un informe técnico.
+de Alfonso a un cliente,
+no un informe técnico.
 
 DATOS EXTRAÍDOS:
 
@@ -384,9 +449,7 @@ def process_invoice(
     filename: str,
 ) -> dict[str, Any]:
 
-    raw_text, extraction_method = (
-        extract_text(path)
-    )
+    raw_text, extraction_method = extract_text(path)
 
     if not raw_text.strip():
 
@@ -395,9 +458,12 @@ def process_invoice(
             "contenido del documento."
         )
 
-    anonymized_text = (
-        anonymize_text(raw_text)
-    )
+    # =========================================================
+    # PASO 1
+    # EXTRACCIÓN LOCAL
+    # =========================================================
+
+    anonymized_text = anonymize_text(raw_text)
 
     if not anonymized_text.strip():
 
@@ -406,12 +472,15 @@ def process_invoice(
             "procesable."
         )
 
+    # =========================================================
+    # PASO 2
+    # GEMINI RECIBE SOLO TEXTO ANONIMIZADO
+    # =========================================================
+
     llm = GeminiClient()
 
-    invoice_data = (
-        llm.analyse_invoice(
-            anonymized_text
-        )
+    invoice_data = llm.analyse_invoice(
+        anonymized_text
     )
 
     if not isinstance(
@@ -424,16 +493,22 @@ def process_invoice(
             "datos estructurados válidos."
         )
 
-    validated = (
-        TaxEngine.validate_invoice(
-            invoice_data
-        )
+    # =========================================================
+    # PASO 3
+    # VALIDACIÓN LOCAL
+    # =========================================================
+
+    validated = TaxEngine.validate_invoice(
+        invoice_data
     )
 
-    explanation = (
-        llm.generate_explanation(
-            validated
-        )
+    # =========================================================
+    # PASO 4
+    # EXPLICACIÓN DE ALFONSO
+    # =========================================================
+
+    explanation = llm.generate_explanation(
+        validated
     )
 
     return {
@@ -444,8 +519,9 @@ def process_invoice(
         "processing": {
             "extraction": extraction_method,
             "anonymized": True,
+            "raw_invoice_sent_to_gemini": False,
             "llm": "gemini-3.1-flash-lite",
-            "engine": "Alfonso Invoice Demo",
+            "engine": "Alfonso Invoice Backend",
         },
 
         "invoice": validated,

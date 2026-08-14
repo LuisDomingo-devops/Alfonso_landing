@@ -4,26 +4,53 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
+
 jobs:
+
   deploy:
+
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
+
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Wrangler
-        run: npm install --save-dev wrangler@4
 
-      - name: Deploy to Cloudflare
-        run: npx wrangler deploy
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+
+      - name: Install Wrangler
+        run: |
+          npm install --global wrangler@4
+
+
+      - name: Verify Docker
+        run: |
+          docker version
+
+
+      - name: Verify Wrangler
+        run: |
+          wrangler --version
+
+
+      - name: Deploy Worker and Container
+        run: |
+          wrangler deploy --containers-rollout=immediate
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
