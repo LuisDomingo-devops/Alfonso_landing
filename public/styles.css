@@ -791,7 +791,9 @@ button {
 
   gap: 75px;
 }
-
+.demo-grid {
+  align-items: start;
+}
 .demo-bullets {
   display: grid;
 
