@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!fileInput || !result) return;
 
-    const API_URL = window.ALFONSO_INVOICE_API || "/api/invoice-demo";
+    const API_URL = "/api/invoice-demo";
 
     function escapeHtml(val) {
       return String(val || "").replace(/[&<>"']/g, (c) => ({
@@ -508,9 +508,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      // Simular latencia de análisis natural
-      await new Promise(r => setTimeout(r, 600));
-
       let data = null;
       try {
         const formData = new FormData();
@@ -523,14 +520,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (response.ok) {
           data = await response.json();
+        } else {
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.detail || "Error en el procesamiento en el servidor.");
         }
       } catch (e) {
-        data = null;
-      }
-
-      // Si no hay respuesta del contenedor remoto o falló la API, procesar dinámicamente con el motor inteligente
-      if (!data || !data.success || !data.invoice) {
-        data = generateSmartInvoiceAnalysis(file);
+        result.innerHTML = `<div style="color: #ff8a8a; padding: 20px; text-align: center; border: 1px solid rgba(255,100,100,0.3); border-radius: 8px; background: rgba(255,100,100,0.1); margin-top: 20px;">Error al procesar la factura: ${escapeHtml(e.message)}</div>`;
+        scrollToDemo();
+        return;
       }
 
       renderResult(data);

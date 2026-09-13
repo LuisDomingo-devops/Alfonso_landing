@@ -156,6 +156,7 @@ def extract_pdf_text(
             page_text = pytesseract.image_to_string(
                 image,
                 lang="spa+eng",
+                config="--psm 6",
             )
 
             if page_text:
@@ -197,6 +198,7 @@ def extract_image_text(
         text = pytesseract.image_to_string(
             image,
             lang="spa+eng",
+            config="--psm 6",
         ).strip()
 
     except Exception as exc:
@@ -338,49 +340,41 @@ def build_llm_invoice_prompt(
 ) -> str:
 
     return f"""
-Eres Alfonso, un asistente especializado
-en administración, fiscalidad y contabilidad
-para autónomos y pequeñas empresas en España.
+Eres Alfonso, un experto contable y fiscal para autónomos y pequeñas empresas en España.
 
-Has recibido información EXTRAÍDA Y
-ANONIMIZADA LOCALMENTE de una factura.
+Has recibido texto EXTRAÍDO Y ANONIMIZADO mediante un motor OCR rudimentario. 
+El OCR a menudo mezcla columnas o pierde el formato, por lo que una línea puede tener el texto "Total" y la siguiente línea tener el número "32,74". Debes ser extremadamente astuto uniendo valores con sus conceptos.
 
-IMPORTANTE:
+IMPORTANTE SOBRE PRIVACIDAD:
+- Los datos personales han sido reemplazados por marcadores como "[PERSONA_ANONIMIZADA]", "[DNI_ANONIMIZADO]", "[NIF_ANONIMIZADO]", etc.
+- SIEMPRE que deduzcas que un emisor o receptor está anonimizado, DEBES devolver el marcador exacto en el JSON (ej: "tax_id": "[NIF_ANONIMIZADO]"). Nunca devuelvas null si ves el marcador.
+- No inventes información ni asumas nombres reales.
 
-- No recibes la factura original.
-- Los datos personales han sido
-  anonimizados antes de llegar a ti.
-- Si un campo (como el NIF o el nombre del emisor/receptor) está presente en la factura pero aparece reemplazado por un marcador de anonimización (como "[DNI_ANONIMIZADO]", "[NIF_ANONIMIZADO]", "[PERSONA_ANONIMIZADA]", etc.), debes devolver ese marcador exacto en el JSON (por ejemplo: "tax_id": "[DNI_ANONIMIZADO]") en lugar de devolver null. Solo devuelve null si el dato no aparece de ninguna forma en el documento.
-- No intentes reconstruir identidades.
-- No inventes información.
-- No conviertas marcadores anonimizados en nombres reales.
-
-Debes interpretar el contenido disponible.
+INSTRUCCIONES PARA DEDUCIR IMPORTES (ESPECIALMENTE SUMINISTROS):
+- En facturas de suministros (luz, agua, internet), rara vez pone "Base Imponible". Suele haber "Potencia", "Energía", "Consumo".
+- Si encuentras un apartado de "Impuestos" o similar, asume que contiene la cuota de IVA.
+- Busca cualquier valor destacado o final que parezca el "Total" (ej: Total a pagar, Importe Factura, Total).
+- Si encuentras el Total y los Impuestos, puedes calcular matemáticamente la Base Imponible (Base = Total - Impuestos).
+- Haz todo lo posible por extraer `base_amount`, `vat_amount` (cuota) y `total_amount` deduciéndolos lógicamente del texto inconexo del OCR. ¡Usa tu capacidad de razonamiento matemático!
 
 Analiza:
-
 - tipo de documento
-- emisor, si aparece anonimizado
-- receptor, si aparece anonimizado
+- emisor (o su marcador)
+- receptor (o su marcador)
 - número de factura
 - fecha
 - concepto
 - productos o servicios
-- base imponible
+- base imponible (dedúcela si es necesario)
 - porcentaje de IVA
-- importe de IVA
+- importe de IVA (cuota)
 - porcentaje de IRPF
-- importe de IRPF
+- importe de IRPF (retención)
 - total
 - naturaleza de la operación
 - ingreso o gasto
-- categoría
-- tratamiento fiscal
-- tratamiento contable
+- categoría contable
 - trimestre correspondiente
-
-Si un dato no aparece claramente,
-devuelve null.
 
 Devuelve EXCLUSIVAMENTE JSON válido:
 
