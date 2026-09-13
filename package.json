@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "deploy:immediate": "wrangler deploy --containers-rollout=immediate"
+    "deploy:immediate": "wrangler deploy --containers-rollout=immediate",
+    "test": "node --test tests/**/*.test.js"
   },
   "devDependencies": {
+    "playwright": "^1.62.1",
     "wrangler": "^4.0.0"
   },
   "dependencies": {

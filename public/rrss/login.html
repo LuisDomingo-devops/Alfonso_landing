@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfonso RRSS — Acceso</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #090a0f;
+            --surface: rgba(18, 20, 32, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(99, 102, 241, 0.4);
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --primary-hover: #4f46e5;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #090a0f 70%);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Elementos decorativos de fondo */
+        .glow-orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: var(--primary);
+            filter: blur(120px);
+            opacity: 0.12;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .orb-1 { top: 10%; left: 15%; }
+        .orb-2 { bottom: 10%; right: 15%; background: #a855f7; }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px -10px rgba(99, 102, 241, 0.1);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 35px;
+        }
+
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .brand strong {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        h1 {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            background: linear-gradient(to right, #ffffff, #d1d5db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .description {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 10px 0 28px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(9, 10, 15, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            outline: none;
+            font: inherit;
+            font-size: 15px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            background: rgba(9, 10, 15, 0.8);
+        }
+
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: var(--danger-bg);
+            border: 1px solid rgba(239, 110, 110, 0.2);
+            color: var(--danger);
+            font-size: 13px;
+            line-height: 1.5;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .error.visible {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <main class="card">
+        <div class="brand">
+            <div class="brand-mark">AI</div>
+            <div>
+                <strong>Alfonso RRSS</strong>
+                <span>Redacción de Contenidos</span>
+            </div>
+        </div>
+
+        <h1>Acceso Privado</h1>
+        <p class="description">
+            Introduce la contraseña para acceder a la herramienta de redacción y creación de publicaciones de redes sociales.
+        </p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="password">Contraseña de Acceso</label>
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="••••••••••••"
+                    required
+                >
+            </div>
+
+            <button id="loginButton" type="submit">
+                Entrar al Panel
+            </button>
+
+            <div id="error" class="error"></div>
+        </form>
+    </main>
+
+    <script>
+    (function () {
+        "use strict";
+
+        const form = document.getElementById("loginForm");
+        const password = document.getElementById("password");
+        const button = document.getElementById("loginButton");
+        const error = document.getElementById("error");
+
+        async function checkExistingSession() {
+            try {
+                const response = await fetch("/api/rrss/me", {
+                    credentials: "same-origin"
+                });
+
+                if (response.ok) {
+                    window.location.href = "/rrss/";
+                }
+            } catch {
+                // No hay sesión.
+            }
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            error.classList.remove("visible");
+            button.disabled = true;
+            button.textContent = "Verificando...";
+
+            try {
+                const response = await fetch("/api/rrss/login", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        password: password.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data?.error?.message || "Credenciales incorrectas."
+                    );
+                }
+
+                window.location.href = "/rrss/";
+            } catch (loginError) {
+                error.textContent = loginError.message;
+                error.classList.add("visible");
+                password.focus();
+                button.textContent = "Entrar al Panel";
+                button.disabled = false;
+            }
+        });
+
+        checkExistingSession();
+    })();
+    </script>
+</body>
+</html>

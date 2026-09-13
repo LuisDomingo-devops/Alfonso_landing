@@ -1,0 +1,2820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfonso RRSS — Panel de Publicaciones</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Archivo de estilos externo -->
+    <link rel="stylesheet" href="rrss.css">
+</head>
+<body>
+
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="app-layout">
+        <!-- Barra de Navegación superior -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-mark">AI</div>
+                <div>
+                    <h1>Alfonso RRSS</h1>
+                    <span class="tagline">Gestión & Generación con Gemini</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="logoutBtn" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="app-content">
+            <!-- Barra lateral: Historial de Publicaciones -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial</h2>
+                    <div class="filter-group">
+                        <label for="filterPlatform" class="sr-only">Filtrar por Red Social</label>
+                        <select id="filterPlatform" class="form-control form-control-sm">
+                            <option value="all">Todas las redes</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="X/Twitter">X/Twitter</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Facebook">Facebook</option>
+                        </select>
+                    </div>
+                    <button id="exportHistoryCsvBtn" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 10px; font-size: 11px;">
+                        <i class="fa-solid fa-file-csv"></i> Exportar Historial a CSV
+                    </button>
+                </div>
+                
+                <div id="publicationsList" class="publications-list">
+                    <!-- Las tarjetas de historial se renderizan aquí -->
+                    <div class="empty-state">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <p>No hay publicaciones guardadas.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Zona principal de generación y edición -->
+            <main class="main-content">
+                <!-- Barra de Navegación de Pestañas Principal -->
+                <nav class="main-tabs-nav">
+                    <button type="button" class="main-tab-btn active" data-target="publisherTab">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Publicador</span>
+                    </button>
+                    <button type="button" class="main-tab-btn" data-target="competitorsTab">
+                        <i class="fa-solid fa-users-viewfinder"></i> <span>Matriz de Competidores</span>
+                    </button>
+                    <button type="button" class="main-tab-btn" data-target="swipeTab">
+                        <i class="fa-solid fa-folder-open"></i> <span>Swipe File</span>
+                    </button>
+                    <button type="button" class="main-tab-btn" data-target="hypothesesTab">
+                        <i class="fa-solid fa-flask"></i> <span>Hipótesis</span>
+                    </button>
+                    <button type="button" class="main-tab-btn" data-target="briefsTab">
+                        <i class="fa-solid fa-bullseye"></i> <span>Campaign Briefs</span>
+                    </button>
+                </nav>
+
+                <!-- PESTAÑA 1: PUBLICADOR (Contenido Original Enriquecido) -->
+                <div id="publisherTab" class="main-tab-content active">
+                    <!-- Tarjeta de Tendencias y Métricas del Nicho -->
+                    <section class="card trends-card" id="trendsSection">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-chart-line"></i> Tendencias & Métricas del Nicho (Autónomos España)</h2>
+                                <p class="subtitle">Análisis inteligente de intereses más demandados para la toma de decisiones acertadas.</p>
+                            </div>
+                            <button id="refreshTrendsBtn" class="btn btn-secondary btn-sm" title="Actualizar tendencias de mercado">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                                <span>Analizar Tendencias</span>
+                            </button>
+                        </div>
+
+                        <div id="trendsLoading" class="trends-loading" style="display: none; text-align: center; padding: 24px;">
+                            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 24px; color: var(--primary);"></i>
+                            <p style="margin-top: 10px; color: var(--text-muted); font-size: 13px;">Gemini está analizando las respuestas, comentarios y me gusta del nicho de autónomos en tiempo real...</p>
+                        </div>
+
+                        <div id="trendsData" class="trends-grid">
+                            <div class="trend-block">
+                                <h3 id="monthlyTrendsTitle">Temas Clave del Mes</h3>
+                                <div class="trend-list" id="monthlyTrendsList">
+                                    <!-- Se renderiza con JS -->
+                                </div>
+                            </div>
+                            <div class="trend-block">
+                                <h3>Temas Calientes de la Semana</h3>
+                                <div class="trend-list" id="weeklyTrendsList">
+                                    <!-- Se renderiza con JS -->
+                                </div>
+                            </div>
+                            <div class="trend-block">
+                                <h3>Estrategia vs Competidores (Declarando)</h3>
+                                <div class="trend-list" id="competitorTrendsList">
+                                    <!-- Se renderiza con JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tarjeta de Generación -->
+                    <section class="card generation-card">
+                        <!-- Selector de Pestañas Internas (Única o Lote) -->
+                        <div class="tabs">
+                            <button type="button" class="tab-btn active" id="singleTabBtn">Publicación Única</button>
+                            <button type="button" class="tab-btn" id="batchTabBtn">Planificación por Lote</button>
+                        </div>
+
+                        <!-- Formulario de Publicación Única -->
+                        <form id="generateForm" class="grid-form">
+                            <div class="card-header col-span-2" style="margin-bottom: 0; padding-bottom: 0;">
+                                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Crear Publicación con IA</h2>
+                                <p class="subtitle">Utiliza el poder de Gemini para generar copys optimizados.</p>
+                            </div>
+
+                            <!-- Inyección de selector de briefing propio para Reverse Engineering -->
+                            <div class="form-group col-span-2">
+                                <label for="campaignBriefId">Briefing Creativo de Campaña (Opcional)</label>
+                                <select id="campaignBriefId" class="form-control">
+                                    <option value="">-- Sin campaña (Generación libre) --</option>
+                                    <!-- Rellenado dinámicamente -->
+                                </select>
+                                <p class="form-help-text" id="briefingHelpText">
+                                    <i class="fa-solid fa-circle-info"></i> La IA se guiará estrictamente por el briefing creativo seleccionado (ángulos, hooks y mecanismo de Alfonso) separando variables de prueba.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="platform">Red Social</label>
+                                <select id="platform" class="form-control" required>
+                                    <option value="LinkedIn">LinkedIn</option>
+                                    <option value="X/Twitter">X / Twitter</option>
+                                    <option value="Instagram">Instagram</option>
+                                    <option value="Facebook">Facebook</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="tone">Tono de Voz</label>
+                                <select id="tone" class="form-control" required>
+                                    <option value="Profesional">Profesional</option>
+                                    <option value="Persuasivo">Persuasivo</option>
+                                    <option value="Informativo">Informativo</option>
+                                    <option value="Divertido">Divertido</option>
+                                    <option value="Técnico">Técnico</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group col-span-2">
+                                <label for="topic">Tema principal o idea del post</label>
+                                <input type="text" id="topic" class="form-control" placeholder="Ej. El lanzamiento de nuestro nuevo módulo de impuestos automatizado..." required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="keywords">Palabras clave o hashtags (opcional)</label>
+                                <input type="text" id="keywords" class="form-control" placeholder="Ej. #autonomos, #finanzas, #ia">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="length">Longitud sugerida</label>
+                                <select id="length" class="form-control">
+                                    <option value="corta">Corta (Rápida de leer)</option>
+                                    <option value="mediana" selected>Mediana (Equilibrada)</option>
+                                    <option value="larga">Larga (Detallada y profunda)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions col-span-2">
+                                <button type="submit" id="generateBtn" class="btn btn-primary">
+                                    <span class="normal-state">
+                                        <i class="fa-solid fa-paper-plane"></i> Generar Publicación
+                                    </span>
+                                    <span class="loading-state" style="display: none;">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i> Generando con Gemini...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Formulario de Generación en Lote -->
+                        <form id="generateBatchForm" class="grid-form" style="display: none;">
+                            <div class="card-header col-span-2" style="margin-bottom: 0; padding-bottom: 0;">
+                                <h2><i class="fa-solid fa-calendar-days"></i> Planificar Lote Mensual</h2>
+                                <p class="subtitle">Genera un calendario de copys adaptados para todo el mes en lote.</p>
+                            </div>
+
+                            <!-- Inyección de selector de briefing propio para Reverse Engineering en lote -->
+                            <div class="form-group col-span-2">
+                                <label for="batchCampaignBriefId">Briefing Creativo de Campaña (Opcional)</label>
+                                <select id="batchCampaignBriefId" class="form-control">
+                                    <option value="">-- Sin campaña (Generación libre) --</option>
+                                    <!-- Rellenado dinámicamente -->
+                                </select>
+                                <p class="form-help-text" id="batchBriefingHelpText">
+                                    <i class="fa-solid fa-circle-info"></i> Se generará un calendario de publicaciones variando los hooks, dolores y variables según la matriz del briefing estratégico.
+                                </p>
+                            </div>
+
+                            <div class="form-group col-span-2">
+                                <label>Redes Sociales a Planificar</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="batchPlatforms" value="LinkedIn" checked>
+                                        <span><i class="fa-brands fa-linkedin"></i> LinkedIn</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="batchPlatforms" value="X/Twitter" checked>
+                                        <span><i class="fa-brands fa-x-twitter"></i> X/Twitter</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="batchPlatforms" value="Instagram">
+                                        <span><i class="fa-brands fa-instagram"></i> Instagram</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="batchPlatforms" value="Facebook">
+                                        <span><i class="fa-brands fa-facebook"></i> Facebook</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="batchTone">Tono de Voz</label>
+                                <select id="batchTone" class="form-control" required>
+                                    <option value="Profesional">Profesional</option>
+                                    <option value="Persuasivo">Persuasivo</option>
+                                    <option value="Informativo">Informativo</option>
+                                    <option value="Divertido">Divertido</option>
+                                    <option value="Técnico">Técnico</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="postsPerPlatform">Posts por Red Social</label>
+                                <select id="postsPerPlatform" class="form-control">
+                                    <option value="2">2 (Quincenal)</option>
+                                    <option value="4" selected>4 (Semanal)</option>
+                                    <option value="8">8 (Bi-semanal)</option>
+                                    <option value="15">15 (Días alternos)</option>
+                                    <option value="28">28 (Publicación diaria)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group col-span-2">
+                                <label for="batchTopic">Tema mensual o idea central del mes</label>
+                                <input type="text" id="batchTopic" class="form-control" placeholder="Ej. Simplificar la gestión fiscal y la facturación electrónica..." required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="batchMonth">Mes</label>
+                                <select id="batchMonth" class="form-control">
+                                    <option value="1">Enero</option>
+                                    <option value="2">Febrero</option>
+                                    <option value="3">Marzo</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Mayo</option>
+                                    <option value="6">Junio</option>
+                                    <option value="7">Julio</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Septiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="batchYear">Año</label>
+                                <select id="batchYear" class="form-control">
+                                    <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions col-span-2">
+                                <button type="submit" id="generateBatchBtn" class="btn btn-primary">
+                                    <span class="normal-state">
+                                        <i class="fa-solid fa-layer-group"></i> Generar Calendario Mensual
+                                    </span>
+                                    <span class="loading-state" style="display: none;">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i> Generando lote estructurado...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Tarjeta de Edición y Visualización -->
+                    <section class="card editor-card" id="editorSection">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-pen-to-square"></i> Editor de Contenido</h2>
+                            <div class="badge-group">
+                                <span id="platformBadge" class="badge">LinkedIn</span>
+                                <span id="toneBadge" class="badge">Profesional</span>
+                            </div>
+                        </div>
+                        
+                        <div class="editor-container">
+                            <textarea id="editorContent" class="form-control editor-textarea" placeholder="Aquí aparecerá la publicación generada. Podrás editarla libremente antes de guardarla."></textarea>
+                        </div>
+
+                        <div class="editor-actions">
+                            <div class="left-actions">
+                                <button id="copyBtn" class="btn btn-secondary" title="Copiar al portapapeles">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span class="btn-text">Copiar</span>
+                                </button>
+                            </div>
+                            <div class="right-actions">
+                                <button id="saveBtn" class="btn btn-primary">
+                                    <i class="fa-regular fa-floppy-disk"></i>
+                                    <span id="saveBtnText">Guardar en Historial</span>
+                                </button>
+                                <button id="deleteBtn" class="btn btn-danger" style="display: none;">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                    <span>Eliminar</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="editorFeedback" class="feedback-msg"></div>
+                    </section>
+
+                    <!-- Tarjeta de Planificación Lote Generada -->
+                    <section class="card editor-card" id="batchPreviewSection" style="display: none;">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-calendar-check"></i> Calendario de Lote Generado</h2>
+                                <p class="subtitle">Revisa, edita las celdas y exporta las publicaciones antes de guardarlas.</p>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="batch-table" id="batchTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">Red Social</th>
+                                        <th style="width: 15%;">Fecha</th>
+                                        <th style="width: 25%;">Tema</th>
+                                        <th style="width: 35%;">Contenido del Post</th>
+                                        <th style="width: 10%;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchTableBody">
+                                    <!-- Las filas de lote se insertan dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="editor-actions">
+                            <div class="left-actions">
+                                <button id="exportCsvBtn" class="btn btn-secondary">
+                                    <i class="fa-solid fa-file-csv"></i>
+                                    <span>Exportar Lote a CSV</span>
+                                </button>
+                            </div>
+                            <div class="right-actions">
+                                <button id="saveBatchBtn" class="btn btn-primary">
+                                    <i class="fa-regular fa-floppy-disk"></i>
+                                    <span>Guardar lote en Historial</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="batchFeedback" class="feedback-msg"></div>
+                    </section>
+                </div>
+
+                <!-- PESTAÑA 2: MATRIZ DE COMPETIDORES -->
+                <div id="competitorsTab" class="main-tab-content" style="display: none;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-users-viewfinder"></i> Matriz de Competidores</h2>
+                                <p class="subtitle">Clasificación y posicionamiento estratégico para reverse engineering del SOP.</p>
+                            </div>
+                            <button id="addCompetitorBtn" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-plus"></i> Registrar Competidor
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Competidores (plegable) -->
+                        <div id="competitorFormContainer" class="form-container-box" style="display: none;">
+                            <h3 id="competitorFormTitle"><i class="fa-solid fa-user-plus"></i> Registrar Competidor</h3>
+                            <form id="competitorForm" class="grid-form">
+                                <input type="hidden" id="comp_id">
+                                <div class="form-group">
+                                    <label for="comp_name">Nombre de la Marca</label>
+                                    <input type="text" id="comp_name" class="form-control" placeholder="Ej. Declarando" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_type">Tipo de Competidor</label>
+                                    <select id="comp_type" class="form-control" required>
+                                        <option value="directo">Directo (Mismo producto/mercado)</option>
+                                        <option value="indirecto">Indirecto (Satisface misma necesidad)</option>
+                                        <option value="aspiracional">Aspiracional (Referente a modelar)</option>
+                                        <option value="emergente">Emergente (Nueva propuesta)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_rss_blog">RSS Blog URL</label>
+                                    <input type="url" id="comp_rss_blog" class="form-control" placeholder="https://example.com/blog/rss">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_rss_social">RSS Redes URL</label>
+                                    <input type="url" id="comp_rss_social" class="form-control" placeholder="https://example.com/social/rss">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_audience">Público Objetivo</label>
+                                    <input type="text" id="comp_audience" class="form-control" placeholder="Ej. Autónomos con facturación > 30k">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_product">Producto Estrella</label>
+                                    <input type="text" id="comp_product" class="form-control" placeholder="Ej. Gestión de impuestos con contable">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_price">Precio aproximado</label>
+                                    <input type="text" id="comp_price" class="form-control" placeholder="Ej. 49€ / mes">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_web_url">Sitio Web URL</label>
+                                    <input type="url" id="comp_web_url" class="form-control" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_linkedin_url">LinkedIn URL</label>
+                                    <input type="url" id="comp_linkedin_url" class="form-control" placeholder="https://linkedin.com/company/...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_instagram_url">Instagram URL</label>
+                                    <input type="url" id="comp_instagram_url" class="form-control" placeholder="https://instagram.com/...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_tiktok_url">TikTok URL</label>
+                                    <input type="url" id="comp_tiktok_url" class="form-control" placeholder="https://tiktok.com/@...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_youtube_url">YouTube URL</label>
+                                    <input type="url" id="comp_youtube_url" class="form-control" placeholder="https://youtube.com/...">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="comp_ads_url">Biblioteca de Anuncios URL</label>
+                                    <input type="url" id="comp_ads_url" class="form-control" placeholder="https://facebook.com/ads/library/...">
+                                </div>
+                                
+                                <div class="col-span-2 section-divider-title">
+                                    <h4>Ficha de Posicionamiento del Competidor</h4>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="comp_pos_we_are">¿Qué son? (We are...)</label>
+                                    <input type="text" id="comp_pos_we_are" class="form-control" placeholder="Ej. Plataforma fiscal para autónomos">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_help_who">¿A quién ayudan? (Help who...)</label>
+                                    <input type="text" id="comp_pos_help_who" class="form-control" placeholder="Ej. Freelances en estimación directa">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_get_what">¿Qué consiguen? (Get what...)</label>
+                                    <input type="text" id="comp_pos_get_what" class="form-control" placeholder="Ej. Ahorrar impuestos sin multas de Hacienda">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_by_how">¿Cómo lo hacen? (By how...)</label>
+                                    <input type="text" id="comp_pos_by_how" class="form-control" placeholder="Ej. Automatización + soporte de gestor experto">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_differentiator">Diferenciador principal</label>
+                                    <input type="text" id="comp_pos_differentiator" class="form-control" placeholder="Ej. Plataforma propietaria extremadamente simple">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_problem">Problema principal que atacan</label>
+                                    <input type="text" id="comp_pos_problem" class="form-control" placeholder="Ej. Miedo a Hacienda y pereza para hacer facturas">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_promise">Promesa principal</label>
+                                    <input type="text" id="comp_pos_promise" class="form-control" placeholder="Ej. Ahorra 1000€ al año en impuestos de media">
+                                </div>
+                                <div class="form-group">
+                                    <label for="comp_pos_objection">Objeción principal que rebaten</label>
+                                    <input type="text" id="comp_pos_objection" class="form-control" placeholder="Ej. Es difícil cambiar de gestor">
+                                </div>
+                                
+                                <div class="form-actions col-span-2">
+                                    <button type="submit" class="btn btn-primary">Guardar Competidor</button>
+                                    <button type="button" id="cancelCompetitorBtn" class="btn btn-secondary">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Grid de Categorías 2x2 -->
+                        <div class="competitors-matrix-grid">
+                            <div class="competitor-category-box">
+                                <h3 class="category-header category-directo"><i class="fa-solid fa-angles-right"></i> Directos</h3>
+                                <div id="competitorsDirectList" class="competitor-list-container">
+                                    <!-- Dinámico -->
+                                </div>
+                            </div>
+                            <div class="competitor-category-box">
+                                <h3 class="category-header category-indirecto"><i class="fa-solid fa-right-left"></i> Indirectos</h3>
+                                <div id="competitorsIndirectList" class="competitor-list-container">
+                                    <!-- Dinámico -->
+                                </div>
+                            </div>
+                            <div class="competitor-category-box">
+                                <h3 class="category-header category-aspiracional"><i class="fa-solid fa-crown"></i> Aspiracionales</h3>
+                                <div id="competitorsAspiracionalList" class="competitor-list-container">
+                                    <!-- Dinámico -->
+                                </div>
+                            </div>
+                            <div class="competitor-category-box">
+                                <h3 class="category-header category-emergente"><i class="fa-solid fa-seedling"></i> Emergentes</h3>
+                                <div id="competitorsEmergenteList" class="competitor-list-container">
+                                    <!-- Dinámico -->
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- PESTAÑA 3: COMPETITIVE SWIPE FILE -->
+                <div id="swipeTab" class="main-tab-content" style="display: none;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-folder-open"></i> Competitive Swipe File</h2>
+                                <p class="subtitle">Análisis descompuesto y scoring de anuncios / creatividades de la competencia.</p>
+                            </div>
+                            <button id="addSwipeBtn" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-plus"></i> Descomponer Anuncio
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Swipe File (plegable) -->
+                        <div id="swipeFormContainer" class="form-container-box" style="display: none;">
+                            <h3 id="swipeFormTitle"><i class="fa-solid fa-cube"></i> Registrar en Swipe File</h3>
+                            <form id="swipeForm" class="grid-form">
+                                <input type="hidden" id="swipe_id">
+                                <div class="form-group">
+                                    <label for="swipe_competitor_id">Competidor</label>
+                                    <select id="swipe_competitor_id" class="form-control" required>
+                                        <!-- Dinámico -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_platform">Red Social/Plataforma</label>
+                                    <select id="swipe_platform" class="form-control" required>
+                                        <option value="LinkedIn">LinkedIn</option>
+                                        <option value="X/Twitter">X/Twitter</option>
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="Facebook">Facebook</option>
+                                        <option value="YouTube">YouTube</option>
+                                        <option value="Google Ads">Google Ads</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_date">Fecha de Observación</label>
+                                    <input type="date" id="swipe_date" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_url">URL del Anuncio/Post</label>
+                                    <input type="url" id="swipe_url" class="form-control" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_type">Tipo de Creatividad</label>
+                                    <select id="swipe_type" class="form-control" required>
+                                        <option value="ad">Anuncio de Pago (Ad)</option>
+                                        <option value="organic">Publicación Orgánica</option>
+                                        <option value="landing">Página de Destino (Landing)</option>
+                                        <option value="email">Email Marketing</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_filename">Nombre del Archivo/Captura</label>
+                                    <input type="text" id="swipe_filename" class="form-control" placeholder="Ej. captura_ad_linkedin.png">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="swipe_notes">Descripción / Notas Generales</label>
+                                    <textarea id="swipe_notes" class="form-control" rows="2" placeholder="Describir el estilo visual, copy general..."></textarea>
+                                </div>
+                                
+                                <div class="col-span-2 section-divider-title">
+                                    <h4>Variables y Ángulos de Conversión (Reverse Engineering)</h4>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_campaign_name">Campaña del Competidor</label>
+                                    <input type="text" id="swipe_campaign_name" class="form-control" placeholder="Ej. Campaña IRPF Trimestral">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_audience">Público al que apela</label>
+                                    <input type="text" id="swipe_audience" class="form-control" placeholder="Ej. Autónomos cansados del papeleo">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_problem">Problema que destaca</label>
+                                    <input type="text" id="swipe_problem" class="form-control" placeholder="Ej. Perder horas en el excel fiscal">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_desire">Deseo que despierta</label>
+                                    <input type="text" id="swipe_desire" class="form-control" placeholder="Ej. Dormir tranquilo y delegar todo">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_hook">Gancho / Hook inicial</label>
+                                    <input type="text" id="swipe_hook" class="form-control" placeholder="Ej. ¿Sigues picando facturas a mano?">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_promise">Promesa central</label>
+                                    <input type="text" id="swipe_promise" class="form-control" placeholder="Ej. Presentamos tus impuestos automáticamente">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_mechanism">Mecanismo único</label>
+                                    <input type="text" id="swipe_mechanism" class="form-control" placeholder="Ej. Lector OCR inteligente homologado">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_proof">Prueba social utilizada</label>
+                                    <input type="text" id="swipe_proof" class="form-control" placeholder="Ej. +10.000 autónomos ya confían">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_offer">Oferta principal</label>
+                                    <input type="text" id="swipe_offer" class="form-control" placeholder="Ej. Prueba gratis 14 días sin tarjeta">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_cta">Llamada a la Acción (CTA)</label>
+                                    <input type="text" id="swipe_cta" class="form-control" placeholder="Ej. Registrarse">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_landing">Landing Page URL</label>
+                                    <input type="url" id="swipe_landing" class="form-control" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_tone">Tono de Copy</label>
+                                    <input type="text" id="swipe_tone" class="form-control" placeholder="Ej. Directo, humorístico, alarmista">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_objection">Objeción que responde</label>
+                                    <input type="text" id="swipe_objection" class="form-control" placeholder="Ej. Es seguro e integrado con Hacienda">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_funnel">Etapa del Embudo</label>
+                                    <select id="swipe_funnel" class="form-control">
+                                        <option value="TOFU">TOFU (Concienciación / Tráfico frío)</option>
+                                        <option value="MOFU">MOFU (Consideración / Valor)</option>
+                                        <option value="BOFU">BOFU (Conversión / Oferta)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_psychology">Flujo Psicológico</label>
+                                    <input type="text" id="swipe_psychology" class="form-control" placeholder="Ej. Dolor -> Agitación -> Solución">
+                                </div>
+                                <div class="form-group">
+                                    <label for="swipe_hook_class">Clasificación de Hook</label>
+                                    <select id="swipe_hook_class" class="form-control">
+                                        <option value="problema">Gancho de Problema</option>
+                                        <option value="resultado">Gancho de Resultado</option>
+                                        <option value="contrarian">Gancho Contrarian (Ir contra corriente)</option>
+                                        <option value="curiosidad">Gancho de Curiosidad</option>
+                                        <option value="historia">Gancho de Historia</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-span-2 section-divider-title">
+                                    <h4>Scoring Psicológico del Patrón (0 a 5)</h4>
+                                </div>
+                                <div class="form-group">
+                                    <label for="score_rep">1. Repetición (Frecuencia en competidores): <span id="val_rep" class="score-val">3</span></label>
+                                    <input type="range" id="score_rep" min="0" max="5" class="form-range" value="3" oninput="document.getElementById('val_rep').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label for="score_pers">2. Persistencia (Duración en el tiempo): <span id="val_pers" class="score-val">3</span></label>
+                                    <input type="range" id="score_pers" min="0" max="5" class="form-range" value="3" oninput="document.getElementById('val_pers').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label for="score_diff">3. Diferenciación (Fuerza de la propuesta): <span id="val_diff" class="score-val">3</span></label>
+                                    <input type="range" id="score_diff" min="0" max="5" class="form-range" value="3" oninput="document.getElementById('val_diff').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label for="score_rel">4. Relevancia (Conexión con el dolor): <span id="val_rel" class="score-val">4</span></label>
+                                    <input type="range" id="score_rel" min="0" max="5" class="form-range" value="4" oninput="document.getElementById('val_rel').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label for="score_app">5. Aplicabilidad (Fácil de adaptar): <span id="val_app" class="score-val">4</span></label>
+                                    <input type="range" id="score_app" min="0" max="5" class="form-range" value="4" oninput="document.getElementById('val_app').innerText=this.value">
+                                </div>
+                                
+                                <div class="form-actions col-span-2">
+                                    <button type="submit" class="btn btn-primary">Guardar Anuncio</button>
+                                    <button type="button" id="cancelSwipeBtn" class="btn btn-secondary">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Swipe Cards Grid -->
+                        <div id="swipeCardsGrid" class="swipe-cards-grid">
+                            <!-- Dinámico -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- PESTAÑA 4: HIPÓTESIS DE TEST -->
+                <div id="hypothesesTab" class="main-tab-content" style="display: none;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-flask"></i> Hipótesis de Test</h2>
+                                <p class="subtitle">Formulación y priorización de experimentos estratégicos de comunicación.</p>
+                            </div>
+                            <button id="addHypothesisBtn" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-plus"></i> Nueva Hipótesis
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Hipótesis (plegable) -->
+                        <div id="hypothesisFormContainer" class="form-container-box" style="display: none;">
+                            <h3 id="hypothesisFormTitle"><i class="fa-solid fa-circle-nodes"></i> Crear Hipótesis de Test</h3>
+                            <form id="hypothesisForm" class="grid-form">
+                                <input type="hidden" id="hyp_id">
+                                <div class="form-group col-span-2">
+                                    <label for="hyp_obs">Observación de Origen</label>
+                                    <input type="text" id="hyp_obs" class="form-control" placeholder="Ej. El competidor X mantiene activo un anuncio de 'ahorro de tiempo' por 6 meses..." required>
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="hyp_text">Hipótesis de Test (¿Qué pasará si...?)</label>
+                                    <textarea id="hyp_text" class="form-control" rows="2" placeholder="Ej. Si enfocamos el copy en el dolor del 'fin de semana perdido picando facturas', obtendremos un CTR 20% mayor..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hyp_test">Variable de Prueba (Test)</label>
+                                    <input type="text" id="hyp_test" class="form-control" placeholder="Ej. Ángulo de 'Ahorro de Tiempo / Fin de semana'" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hyp_control">Variable de Control</label>
+                                    <input type="text" id="hyp_control" class="form-control" placeholder="Ej. Ángulo genérico de 'Digitalización / Facturación electrónica'" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hyp_metric">Métrica Clave de Validación (KPI)</label>
+                                    <input type="text" id="hyp_metric" class="form-control" placeholder="Ej. CTR en LinkedIn Ads" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hyp_expected">Resultado Esperado</label>
+                                    <input type="text" id="hyp_expected" class="form-control" placeholder="Ej. CTR variante Test > 2.5% vs Control ~1.8%" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="hyp_score_rel">Relevancia (Valor cliente 1-5)</label>
+                                    <select id="hyp_score_rel" class="form-control">
+                                        <option value="1">1 - Baja</option>
+                                        <option value="2">2 - Moderada</option>
+                                        <option value="3">3 - Media</option>
+                                        <option value="4">4 - Alta</option>
+                                        <option value="5" selected>5 - Crítica</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hyp_score_app">Aplicabilidad (Facilidad 1-5)</label>
+                                    <select id="hyp_score_app" class="form-control">
+                                        <option value="1">1 - Muy complejo</option>
+                                        <option value="2">2 - Difícil</option>
+                                        <option value="3">3 - Medio</option>
+                                        <option value="4">4 - Viable</option>
+                                        <option value="5" selected>5 - Inmediato</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-actions col-span-2">
+                                    <button type="submit" class="btn btn-primary">Guardar Hipótesis</button>
+                                    <button type="button" id="cancelHypothesisBtn" class="btn btn-secondary">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Tabla de Hipótesis -->
+                        <div class="table-container">
+                            <table class="batch-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%;">Observación / Hipótesis</th>
+                                        <th style="width: 20%;">Test vs Control</th>
+                                        <th style="width: 15%;">Métrica / Objetivo</th>
+                                        <th style="width: 10%;">Prioridad</th>
+                                        <th style="width: 15%;">Estado</th>
+                                        <th style="width: 15%;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hypothesesTableBody">
+                                    <!-- Dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- PESTAÑA 5: BRIEFINGS CREATIVOS -->
+                <div id="briefsTab" class="main-tab-content" style="display: none;">
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2><i class="fa-solid fa-bullseye"></i> Briefings Creativos de Campañas Propias</h2>
+                                <p class="subtitle">Creación de briefings adaptados basados en hipótesis validadas para alimentar al generador de copy.</p>
+                            </div>
+                            <button id="addBriefBtn" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-plus"></i> Crear Briefing
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Brief (plegable) -->
+                        <div id="briefFormContainer" class="form-container-box" style="display: none;">
+                            <h3 id="briefFormTitle"><i class="fa-solid fa-file-invoice"></i> Nuevo Briefing de Campaña</h3>
+                            <form id="briefForm" class="grid-form">
+                                <input type="hidden" id="brief_id">
+                                <div class="form-group">
+                                    <label for="brief_hyp_id">Hipótesis Validada Relacionada (Opcional)</label>
+                                    <select id="brief_hyp_id" class="form-control">
+                                        <option value="">-- Sin hipótesis (Campaña libre) --</option>
+                                        <!-- Dinámico -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_name">Nombre de la Campaña propia</label>
+                                    <input type="text" id="brief_name" class="form-control" placeholder="Ej. Campaña Ahorro Trimestral Finde Libre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_goal">Objetivo de Conversión</label>
+                                    <input type="text" id="brief_goal" class="form-control" placeholder="Ej. Captar leads para registro en la Beta" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_audience">Audiencia Específica</label>
+                                    <input type="text" id="brief_audience" class="form-control" placeholder="Ej. Autónomos que rellenan sus trimestrales a mano" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_problem">Problema principal a atacar</label>
+                                    <input type="text" id="brief_problem" class="form-control" placeholder="Ej. Pérdida del fin de semana ordenando facturas en papel" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_desire">Deseo a satisfacer</label>
+                                    <input type="text" id="brief_desire" class="form-control" placeholder="Ej. Tener domingos libres para pasarlo con la familia" required>
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="brief_insight">Insight clave</label>
+                                    <input type="text" id="brief_insight" class="form-control" placeholder="Ej. Prefieren perder dinero en gestoría que perder tiempo, pero las gestorías son lentas">
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_angle">Ángulo Persuasivo (Efoque)</label>
+                                    <input type="text" id="brief_angle" class="form-control" placeholder="Ej. El valor de tu fin de semana vs 29€ al mes" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_hook">Gancho Scroll-Stopper (Hook)</label>
+                                    <input type="text" id="brief_hook" class="form-control" placeholder="Ej. ¿Vas a pasar otro domingo cuadrado el IVA en un Excel?" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_promise">Promesa de Valor</label>
+                                    <input type="text" id="brief_promise" class="form-control" placeholder="Ej. Alfonso AI liquida tus trimestrales en 5 minutos de forma segura" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_mechanism">Mecanismo Único de Alfonso</label>
+                                    <input type="text" id="brief_mechanism" class="form-control" placeholder="Ej. Motor inteligente Veri*Factu integrado con AEAT" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_proof">Prueba Social / Prueba de Autoridad</label>
+                                    <input type="text" id="brief_proof" class="form-control" placeholder="Ej. Más de 1.000 autónomos ya automatizan su contabilidad con nosotros">
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_offer">Oferta Asociada</label>
+                                    <input type="text" id="brief_offer" class="form-control" placeholder="Ej. 14 días gratis de prueba sin tarjeta + setup inicial de gestor">
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_cta">CTA (Llamada a la Acción)</label>
+                                    <input type="text" id="brief_cta" class="form-control" placeholder="Ej. Probar Gratis 14 Días" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_format">Formatos de publicación sugeridos</label>
+                                    <input type="text" id="brief_format" class="form-control" placeholder="Ej. Post largo en LinkedIn con listado y carrusel visual">
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_landing">Landing Page de Destino</label>
+                                    <input type="url" id="brief_landing" class="form-control" placeholder="https://alfonsoaikonta.com/beta">
+                                </div>
+                                <div class="form-group">
+                                    <label for="brief_kpi">KPI principal de éxito</label>
+                                    <input type="text" id="brief_kpi" class="form-control" placeholder="Ej. Tasa de registro (CPL)" required>
+                                </div>
+                                
+                                <div class="form-actions col-span-2">
+                                    <button type="submit" class="btn btn-primary">Guardar Briefing</button>
+                                    <button type="button" id="cancelBriefBtn" class="btn btn-secondary">Cancelar</button>
+                        <!-- Grid de Briefs -->
+                        <div id="briefsGridList" class="briefs-grid-list">
+                            <!-- Dinámico -->
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        "use strict";
+
+        // Referencias al DOM
+        const logoutBtn = document.getElementById("logoutBtn");
+        const filterPlatform = document.getElementById("filterPlatform");
+        const publicationsList = document.getElementById("publicationsList");
+        const exportHistoryCsvBtn = document.getElementById("exportHistoryCsvBtn");
+        const sidebar = document.querySelector(".sidebar");
+        
+        // Pestañas de Publicador (Internas)
+        const singleTabBtn = document.getElementById("singleTabBtn");
+        const batchTabBtn = document.getElementById("batchTabBtn");
+        const generateForm = document.getElementById("generateForm");
+        const generateBatchForm = document.getElementById("generateBatchForm");
+
+        // Formulario única
+        const platformInput = document.getElementById("platform");
+        const toneInput = document.getElementById("tone");
+        const topicInput = document.getElementById("topic");
+        const keywordsInput = document.getElementById("keywords");
+        const lengthInput = document.getElementById("length");
+        const generateBtn = document.getElementById("generateBtn");
+        const campaignBriefIdSelect = document.getElementById("campaignBriefId");
+        const briefingHelpText = document.getElementById("briefingHelpText");
+
+        // Formulario batch
+        const batchToneInput = document.getElementById("batchTone");
+        const postsPerPlatformInput = document.getElementById("postsPerPlatform");
+        const batchTopicInput = document.getElementById("batchTopic");
+        const batchMonthInput = document.getElementById("batchMonth");
+        const batchYearInput = document.getElementById("batchYear");
+        const generateBatchBtn = document.getElementById("generateBatchBtn");
+        const batchCampaignBriefIdSelect = document.getElementById("batchCampaignBriefId");
+        const batchBriefingHelpText = document.getElementById("batchBriefingHelpText");
+
+        // Editores
+        const editorSection = document.getElementById("editorSection");
+        const editorContent = document.getElementById("editorContent");
+        const platformBadge = document.getElementById("platformBadge");
+        const toneBadge = document.getElementById("toneBadge");
+        const copyBtn = document.getElementById("copyBtn");
+        const saveBtn = document.getElementById("saveBtn");
+        const saveBtnText = document.getElementById("saveBtnText");
+        const deleteBtn = document.getElementById("deleteBtn");
+        const editorFeedback = document.getElementById("editorFeedback");
+
+        // Lote Preview
+        const batchPreviewSection = document.getElementById("batchPreviewSection");
+        const batchTableBody = document.getElementById("batchTableBody");
+        const exportCsvBtn = document.getElementById("exportCsvBtn");
+        const saveBatchBtn = document.getElementById("saveBatchBtn");
+        const batchFeedback = document.getElementById("batchFeedback");
+        
+        // Tendencias
+        const trendsSection = document.getElementById("trendsSection");
+        const refreshTrendsBtn = document.getElementById("refreshTrendsBtn");
+        const trendsLoading = document.getElementById("trendsLoading");
+        const trendsData = document.getElementById("trendsData");
+        const monthlyTrendsList = document.getElementById("monthlyTrendsList");
+        const weeklyTrendsList = document.getElementById("weeklyTrendsList");
+        const competitorTrendsList = document.getElementById("competitorTrendsList");
+        const monthlyTrendsTitle = document.getElementById("monthlyTrendsTitle");
+
+        // --- DOM Pestañas Principales (Nuevas) ---
+        const mainTabBtns = document.querySelectorAll(".main-tab-btn");
+        const mainTabContents = document.querySelectorAll(".main-tab-content");
+
+        // Competidores
+        const addCompetitorBtn = document.getElementById("addCompetitorBtn");
+        const competitorFormContainer = document.getElementById("competitorFormContainer");
+        const competitorForm = document.getElementById("competitorForm");
+        const cancelCompetitorBtn = document.getElementById("cancelCompetitorBtn");
+        const competitorsDirectList = document.getElementById("competitorsDirectList");
+        const competitorsIndirectList = document.getElementById("competitorsIndirectList");
+        const competitorsAspiracionalList = document.getElementById("competitorsAspiracionalList");
+        const competitorsEmergenteList = document.getElementById("competitorsEmergenteList");
+
+        // Swipe File
+        const addSwipeBtn = document.getElementById("addSwipeBtn");
+        const swipeFormContainer = document.getElementById("swipeFormContainer");
+        const swipeForm = document.getElementById("swipeForm");
+        const cancelSwipeBtn = document.getElementById("cancelSwipeBtn");
+        const swipeCardsGrid = document.getElementById("swipeCardsGrid");
+        const swipeCompetitorSelect = document.getElementById("swipe_competitor_id");
+
+        // Hipótesis
+        const addHypothesisBtn = document.getElementById("addHypothesisBtn");
+        const hypothesisFormContainer = document.getElementById("hypothesisFormContainer");
+        const hypothesisForm = document.getElementById("hypothesisForm");
+        const cancelHypothesisBtn = document.getElementById("cancelHypothesisBtn");
+        const hypothesesTableBody = document.getElementById("hypothesesTableBody");
+
+        // Briefings
+        const addBriefBtn = document.getElementById("addBriefBtn");
+        const briefFormContainer = document.getElementById("briefFormContainer");
+        const briefForm = document.getElementById("briefForm");
+        const cancelBriefBtn = document.getElementById("cancelBriefBtn");
+        const briefsGridList = document.getElementById("briefsGridList");
+        const briefHypSelect = document.getElementById("brief_hyp_id");
+
+        // Estado de la aplicación
+        let state = {
+            publications: [],
+            currentPublicationId: null, // null = nuevo
+            isGenerating: false,
+            isSaving: false,
+            currentTab: "single", // "single" o "batch"
+            batchPublications: [], // publicaciones generadas en lote temporalmente
+            editingBatchIndex: null, // si estamos editando una publicación del lote en el editor unitario
+            trends: {}, // tendencias actuales cargadas
+
+            // Reverse Engineering
+            competitors: [],
+            swipeItems: [],
+            hypotheses: [],
+            briefs: [],
+            activeMainTab: "publisherTab"
+        };
+
+        // Iconos de las redes sociales
+        const platformIcons = {
+            "LinkedIn": "fa-brands fa-linkedin",
+            "X/Twitter": "fa-brands fa-x-twitter",
+            "Instagram": "fa-brands fa-instagram",
+            "Facebook": "fa-brands fa-facebook",
+            "YouTube": "fa-brands fa-youtube",
+            "Google Ads": "fa-brands fa-google"
+        };
+
+        // Verificar autenticación
+        async function checkAuth() {
+            try {
+                const res = await fetch("/api/rrss/me", { credentials: "same-origin" });
+                if (!res.ok) {
+                    window.location.href = "login.html";
+                }
+            } catch {
+                window.location.href = "login.html";
+            }
+        }
+
+        // Cargar publicaciones de la API
+        async function loadPublications() {
+            try {
+                const res = await fetch("/api/rrss/publications", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.publications = data?.publications || [];
+                    renderHistory();
+                }
+            } catch (err) {
+                console.error("Error cargando historial:", err);
+            }
+        }
+
+        // Renderizar el historial en el panel lateral
+        function renderHistory() {
+            const filter = filterPlatform.value;
+            const filtered = filter === "all" 
+                ? state.publications 
+                : state.publications.filter(p => p.platform === filter);
+
+            if (filtered.length === 0) {
+                publicationsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <p>No hay publicaciones guardadas.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            publicationsList.innerHTML = filtered.map(pub => {
+                const isScheduled = pub.scheduled_at !== null;
+                const timestamp = isScheduled ? pub.scheduled_at : pub.created_at;
+                
+                const date = new Date(timestamp * 1000).toLocaleDateString("es-ES", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit"
+                });
+                
+                const icon = platformIcons[pub.platform] || "fa-solid fa-share-nodes";
+                const activeClass = state.currentPublicationId === pub.id ? "active" : "";
+                
+                // Truncar contenido para la vista previa
+                const previewText = pub.content.length > 70 
+                    ? pub.content.substring(0, 67) + "..." 
+                    : pub.content;
+
+                const dateLabel = isScheduled 
+                    ? `<span style="color: var(--primary); font-weight: 500;"><i class="fa-regular fa-calendar-check"></i> ${date}</span>` 
+                    : date;
+
+                return `
+                    <div class="pub-card ${activeClass}" data-id="${pub.id}">
+                        <div class="pub-card-header">
+                            <span class="pub-card-platform">
+                                <i class="${icon}"></i> ${pub.platform}
+                            </span>
+                            <span class="pub-card-date">${dateLabel}</span>
+                        </div>
+                        <h3 class="pub-card-topic">${pub.topic}</h3>
+                        <p class="pub-card-preview">${escapeHtml(previewText)}</p>
+                    </div>
+                `;
+            }).join("");
+
+            // Añadir listeners de clic a las tarjetas
+            document.querySelectorAll(".pub-card").forEach(card => {
+                card.addEventListener("click", () => {
+                    const id = parseInt(card.dataset.id, 10);
+                    selectPublication(id);
+                });
+            });
+        }
+
+        // Seleccionar una publicación para editar en el panel central
+        function selectPublication(id) {
+            // Si hacemos clic en el historial, salimos del modo edición de lote
+            state.editingBatchIndex = null;
+            
+            const pub = state.publications.find(p => p.id === id);
+            if (!pub) return;
+
+            // Asegurarnos de que el panel correcto esté visible
+            switchTab("single");
+
+            state.currentPublicationId = id;
+            editorContent.value = pub.content;
+            
+            // Actualizar insignias del editor
+            platformBadge.textContent = pub.platform;
+            platformBadge.className = `badge badge-${pub.platform.replace('/', '').toLowerCase()}`;
+            toneBadge.textContent = pub.tone;
+            toneBadge.className = `badge badge-tone`;
+
+            // Actualizar estado de los botones
+            saveBtnText.textContent = "Actualizar Publicación";
+            deleteBtn.style.display = "inline-flex";
+
+            // Quitar feedback
+            clearFeedback();
+            
+            // Marcar activa en la lista
+            document.querySelectorAll(".pub-card").forEach(card => {
+                card.classList.toggle("active", parseInt(card.dataset.id, 10) === id);
+            });
+        }
+
+        // Alternar pestañas del Publicador (internas)
+        function switchTab(tab) {
+            state.currentTab = tab;
+            if (tab === "single") {
+                singleTabBtn.classList.add("active");
+                batchTabBtn.classList.remove("active");
+                generateForm.style.display = "grid";
+                generateBatchForm.style.display = "none";
+                
+                // Mostrar editor unitario y ocultar preview de lote
+                editorSection.style.display = "block";
+                batchPreviewSection.style.display = "none";
+            } else {
+                singleTabBtn.classList.remove("active");
+                batchTabBtn.classList.add("active");
+                generateForm.style.display = "none";
+                generateBatchForm.style.display = "grid";
+
+                // Si hay lote generado en memoria, lo mostramos, si no ocultamos ambos editores
+                editorSection.style.display = state.editingBatchIndex !== null ? "block" : "none";
+                batchPreviewSection.style.display = state.editingBatchIndex !== null ? "none" : (state.batchPublications.length > 0 ? "block" : "none");
+            }
+        }
+
+        // Alternar Pestañas Principales (Navegación Superior)
+        function switchMainTab(targetTab) {
+            state.activeMainTab = targetTab;
+            
+            mainTabBtns.forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.target === targetTab);
+            });
+
+            mainTabContents.forEach(content => {
+                content.style.display = content.id === targetTab ? "block" : "none";
+            });
+
+            // Detalle de UI Premium: Ocultar sidebar (historial) en pestañas que no sean el publicador
+            // para optimizar el espacio de las tablas y fichas técnicas
+            if (targetTab === "publisherTab") {
+                sidebar.style.display = "flex";
+                document.querySelector(".app-content").style.gridTemplateColumns = "280px 1fr";
+            } else {
+                sidebar.style.display = "none";
+                document.querySelector(".app-content").style.gridTemplateColumns = "1fr";
+            }
+
+            // Cargar datos frescos según la pestaña activa
+            if (targetTab === "competitorsTab") loadCompetitors();
+            if (targetTab === "swipeTab") {
+                loadCompetitors();
+                loadSwipeFile();
+            }
+            if (targetTab === "hypothesesTab") loadHypotheses();
+            if (targetTab === "briefsTab") {
+                loadHypotheses();
+                loadCampaignBriefs();
+            }
+        }
+
+        // --- SISTEMA DE REVERSE ENGINEERING: COMPETIDORES (Pestaña 2) ---
+        async function loadCompetitors() {
+            try {
+                const res = await fetch("/api/rrss/competitors", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.competitors = data?.competitors || [];
+                    renderCompetitors();
+                    updateCompetitorSelects();
+                }
+            } catch (err) {
+                console.error("Error cargando competidores:", err);
+            }
+        }
+
+        function renderCompetitors() {
+            // Limpiar listas
+            competitorsDirectList.innerHTML = "";
+            competitorsIndirectList.innerHTML = "";
+            competitorsAspiracionalList.innerHTML = "";
+            competitorsEmergenteList.innerHTML = "";
+
+            if (state.competitors.length === 0) {
+                const empty = `<p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px;">Ningún competidor registrado.</p>`;
+                competitorsDirectList.innerHTML = empty;
+                competitorsIndirectList.innerHTML = empty;
+                competitorsAspiracionalList.innerHTML = empty;
+                competitorsEmergenteList.innerHTML = empty;
+                return;
+            }
+
+            state.competitors.forEach(c => {
+                const container = {
+                    directo: competitorsDirectList,
+                    indirecto: competitorsIndirectList,
+                    aspiracional: competitorsAspiracionalList,
+                    emergente: competitorsEmergenteList
+                }[c.type || "directo"] || competitorsDirectList;
+
+                const cardHtml = `
+                    <div class="competitor-card-item">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <h4 style="font-size: 14px; font-weight: 700; color: var(--text);">${escapeHtml(c.name)}</h4>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="btn btn-secondary btn-xs edit-comp-btn" data-id="${c.id}" title="Editar competidor y ficha"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-danger btn-xs delete-comp-btn" data-id="${c.id}" title="Eliminar competidor"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="comp-details-list">
+                            ${c.target_audience ? `<div><strong>Público:</strong> ${escapeHtml(c.target_audience)}</div>` : ""}
+                            ${c.product ? `<div><strong>Producto:</strong> ${escapeHtml(c.product)}</div>` : ""}
+                            ${c.price ? `<div><strong>Precio:</strong> ${escapeHtml(c.price)}</div>` : ""}
+                        </div>
+                        
+                        <!-- Redes Sociales / Canales -->
+                        <div class="comp-channels-row">
+                            ${c.web_url ? `<a href="${c.web_url}" target="_blank" title="Web"><i class="fa-solid fa-globe"></i></a>` : ""}
+                            ${c.linkedin_url ? `<a href="${c.linkedin_url}" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>` : ""}
+                            ${c.instagram_url ? `<a href="${c.instagram_url}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>` : ""}
+                            ${c.tiktok_url ? `<a href="${c.tiktok_url}" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>` : ""}
+                            ${c.youtube_url ? `<a href="${c.youtube_url}" target="_blank" title="YouTube"><i class="fa-brands fa-youtube"></i></a>` : ""}
+                            ${c.ads_url ? `<a href="${c.ads_url}" target="_blank" style="color: var(--primary);" title="Biblioteca de Anuncios"><i class="fa-solid fa-rectangle-ad"></i> Ads</a>` : ""}
+                        </div>
+
+                        <!-- Ficha de Posicionamiento Plegable -->
+                        ${c.positioning_promise ? `
+                        <details class="comp-positioning-details">
+                            <summary>Posicionamiento del SOP</summary>
+                            <div style="padding-top: 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
+                                <div><strong>Somos:</strong> ${escapeHtml(c.positioning_we_are || "-")}</div>
+                                <div><strong>Ayudamos a:</strong> ${escapeHtml(c.positioning_help_who || "-")}</div>
+                                <div><strong>Consiguen:</strong> ${escapeHtml(c.positioning_get_what || "-")}</div>
+                                <div><strong>Mediante:</strong> ${escapeHtml(c.positioning_by_how || "-")}</div>
+                                <div><strong>Diferenciador:</strong> ${escapeHtml(c.positioning_differentiator || "-")}</div>
+                                <div><strong>Problema:</strong> ${escapeHtml(c.positioning_problem || "-")}</div>
+                                <div><strong>Promesa:</strong> <span style="color: var(--primary); font-weight:600;">${escapeHtml(c.positioning_promise || "-")}</span></div>
+                                <div><strong>Objeción:</strong> ${escapeHtml(c.positioning_objection || "-")}</div>
+                            </div>
+                        </details>
+                        ` : ""}
+                    </div>
+                `;
+                container.insertAdjacentHTML("beforeend", cardHtml);
+            });
+
+            // Listeners
+            document.querySelectorAll(".edit-comp-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    const c = state.competitors.find(comp => comp.id === id);
+                    if (c) {
+                        document.getElementById("comp_id").value = c.id;
+                        document.getElementById("comp_name").value = c.name;
+                        document.getElementById("comp_type").value = c.type || "directo";
+                        document.getElementById("comp_rss_blog").value = c.rss_blog_url || "";
+                        document.getElementById("comp_rss_social").value = c.rss_social_url || "";
+                        document.getElementById("comp_audience").value = c.target_audience || "";
+                        document.getElementById("comp_product").value = c.product || "";
+                        document.getElementById("comp_price").value = c.price || "";
+                        document.getElementById("comp_web_url").value = c.web_url || "";
+                        document.getElementById("comp_linkedin_url").value = c.linkedin_url || "";
+                        document.getElementById("comp_instagram_url").value = c.instagram_url || "";
+                        document.getElementById("comp_tiktok_url").value = c.tiktok_url || "";
+                        document.getElementById("comp_youtube_url").value = c.youtube_url || "";
+                        document.getElementById("comp_ads_url").value = c.ads_url || "";
+                        
+                        document.getElementById("comp_pos_we_are").value = c.positioning_we_are || "";
+                        document.getElementById("comp_pos_help_who").value = c.positioning_help_who || "";
+                        document.getElementById("comp_pos_get_what").value = c.positioning_get_what || "";
+                        document.getElementById("comp_pos_by_how").value = c.positioning_by_how || "";
+                        document.getElementById("comp_pos_differentiator").value = c.positioning_differentiator || "";
+                        document.getElementById("comp_pos_problem").value = c.positioning_problem || "";
+                        document.getElementById("comp_pos_promise").value = c.positioning_promise || "";
+                        document.getElementById("comp_pos_objection").value = c.positioning_objection || "";
+
+                        document.getElementById("competitorFormTitle").innerHTML = `<i class="fa-solid fa-user-pen"></i> Editar Competidor: ${escapeHtml(c.name)}`;
+                        competitorFormContainer.style.display = "block";
+                        competitorFormContainer.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+            });
+
+            document.querySelectorAll(".delete-comp-btn").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    if (confirm("¿Estás seguro de que deseas eliminar este competidor de forma permanente?")) {
+                        const id = btn.dataset.id;
+                        const res = await fetch(`/api/rrss/competitors/${id}`, { method: "DELETE", credentials: "same-origin" });
+                        if (res.ok) {
+                            loadCompetitors();
+                        } else {
+                            alert("No se pudo eliminar el competidor.");
+                        }
+                    }
+                });
+            });
+        }
+
+        async function handleSaveCompetitor(e) {
+            e.preventDefault();
+            const id = document.getElementById("comp_id").value;
+            const payload = {
+                name: document.getElementById("comp_name").value,
+                type: document.getElementById("comp_type").value,
+                rss_blog_url: document.getElementById("comp_rss_blog").value,
+                rss_social_url: document.getElementById("comp_rss_social").value,
+                target_audience: document.getElementById("comp_audience").value,
+                product: document.getElementById("comp_product").value,
+                price: document.getElementById("comp_price").value,
+                web_url: document.getElementById("comp_web_url").value,
+                linkedin_url: document.getElementById("comp_linkedin_url").value,
+                instagram_url: document.getElementById("comp_instagram_url").value,
+                tiktok_url: document.getElementById("comp_tiktok_url").value,
+                youtube_url: document.getElementById("comp_youtube_url").value,
+                ads_url: document.getElementById("comp_ads_url").value,
+                
+                positioning_we_are: document.getElementById("comp_pos_we_are").value,
+                positioning_help_who: document.getElementById("comp_pos_help_who").value,
+                positioning_get_what: document.getElementById("comp_pos_get_what").value,
+                positioning_by_how: document.getElementById("comp_pos_by_how").value,
+                positioning_differentiator: document.getElementById("comp_pos_differentiator").value,
+                positioning_problem: document.getElementById("comp_pos_problem").value,
+                positioning_promise: document.getElementById("comp_pos_promise").value,
+                positioning_objection: document.getElementById("comp_pos_objection").value
+            };
+
+            const isEdit = id !== "";
+            const url = isEdit ? `/api/rrss/competitors/${id}` : "/api/rrss/competitors";
+            const method = isEdit ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                credentials: "same-origin"
+            });
+
+            if (res.ok) {
+                competitorForm.reset();
+                document.getElementById("comp_id").value = "";
+                competitorFormContainer.style.display = "none";
+                loadCompetitors();
+            } else {
+                alert("Error al guardar competidor.");
+            }
+        }
+
+        function updateCompetitorSelects() {
+            const options = state.competitors.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+            swipeCompetitorSelect.innerHTML = `<option value="">-- Selecciona un competidor --</option>` + options;
+        }
+
+        // --- COMPETITIVE SWIPE FILE (Pestaña 3) ---
+        async function loadSwipeFile() {
+            try {
+                const res = await fetch("/api/rrss/swipe-file", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.swipeItems = data?.swipe_items || [];
+                    renderSwipeFile();
+                }
+            } catch (err) {
+                console.error("Error cargando Swipe File:", err);
+            }
+        }
+
+        function renderSwipeFile() {
+            swipeCardsGrid.innerHTML = "";
+            if (state.swipeItems.length === 0) {
+                swipeCardsGrid.innerHTML = `<div class="empty-state col-span-3" style="grid-column: 1 / -1;"><i class="fa-regular fa-folder-open"></i><p>El Swipe File está vacío. Añade capturas o anuncios para analizar.</p></div>`;
+                return;
+            }
+
+            state.swipeItems.forEach(item => {
+                const comp = state.competitors.find(c => c.id === item.competitor_id);
+                const compName = comp ? comp.name : "Competidor desconocido";
+                
+                // Calcular Score Psicológico Total (Promedio del SOP 0-5)
+                const scores = [
+                    item.scoring_repetition || 0,
+                    item.scoring_persistence || 0,
+                    item.scoring_differentiation || 0,
+                    item.scoring_relevance || 0,
+                    item.scoring_applicability || 0
+                ];
+                const scoreSum = scores.reduce((a, b) => a + b, 0);
+                const scoreAvg = (scoreSum / scores.length).toFixed(1);
+                
+                let scoreBadgeClass = "badge-danger";
+                if (scoreAvg >= 4.0) scoreBadgeClass = "badge-success";
+                else if (scoreAvg >= 2.5) scoreBadgeClass = "badge-warning";
+
+                const icon = platformIcons[item.platform] || "fa-solid fa-share-nodes";
+                const funnelClass = { TOFU: "badge-tofu", MOFU: "badge-mofu", BOFU: "badge-bofu" }[item.funnel_stage] || "badge-tofu";
+
+                const cardHtml = `
+                    <div class="swipe-card">
+                        <div class="swipe-card-header">
+                            <div style="display: flex; flex-direction: column;">
+                                <span class="pub-card-platform"><i class="${icon}"></i> ${item.platform}</span>
+                                <span style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Obs: ${item.date_observed}</span>
+                            </div>
+                            <span class="badge ${scoreBadgeClass}" style="font-size: 13px; font-weight: 700; padding: 4px 8px;">
+                                <i class="fa-solid fa-star"></i> ${scoreAvg} / 5
+                            </span>
+                        </div>
+                        
+                        <div class="swipe-card-body">
+                            <h3 class="swipe-title">${escapeHtml(item.campaign_name || "Anuncio / Creatividad")}</h3>
+                            <div class="swipe-comp-label">Marca: <strong>${escapeHtml(compName)}</strong></div>
+                            
+                            <div class="swipe-metrics-progress">
+                                <div class="progress-bar-container">
+                                    <span class="lbl">Repetición</span>
+                                    <div class="prog-track"><div class="prog-fill" style="width: ${item.scoring_repetition * 20}%;"></div></div>
+                                    <span class="val">${item.scoring_repetition}/5</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <span class="lbl">Persistencia</span>
+                                    <div class="prog-track"><div class="prog-fill" style="width: ${item.scoring_persistence * 20}%;"></div></div>
+                                    <span class="val">${item.scoring_persistence}/5</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <span class="lbl">Relevancia</span>
+                                    <div class="prog-track"><div class="prog-fill" style="width: ${item.scoring_relevance * 20}%;"></div></div>
+                                    <span class="val">${item.scoring_relevance}/5</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+                                <div><strong>Gancho (Hook):</strong> <span class="quote-text">"${escapeHtml(item.hook || "-")}"</span></div>
+                                <div><strong>Promesa:</strong> ${escapeHtml(item.promise || "-")}</div>
+                                <div><strong>Mecanismo:</strong> <em>${escapeHtml(item.mechanism || "-")}</em></div>
+                                ${item.cta ? `<div><strong>CTA:</strong> <span class="badge badge-tone" style="display:inline-block;">${escapeHtml(item.cta)}</span></div>` : ""}
+                                ${item.landing ? `<div><strong>Pág. Destino:</strong> <a href="${item.landing}" target="_blank" class="text-link" style="font-size:11px;">${item.landing.substring(0, 30)}...</a></div>` : ""}
+                            </div>
+
+                            ${item.notes ? `
+                            <div style="background: rgba(255,255,255,0.02); border-left: 2px solid var(--primary); padding: 6px 8px; border-radius: 4px; font-size: 11px; margin-top: 12px; color: var(--text-muted); line-height: 1.4;">
+                                <strong>Notas:</strong> ${escapeHtml(item.notes)}
+                            </div>
+                            ` : ""}
+                        </div>
+
+                        <div class="swipe-card-footer">
+                            <span class="badge ${funnelClass}">${item.funnel_stage}</span>
+                            <div style="display: flex; gap: 4px;">
+                                ${item.url ? `<a href="${item.url}" target="_blank" class="btn btn-secondary btn-xs" title="Ver post original"><i class="fa-solid fa-up-right-from-square"></i></a>` : ""}
+                                <button class="btn btn-secondary btn-xs edit-swipe-btn" data-id="${item.id}" title="Editar ficha de Swipe"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-danger btn-xs delete-swipe-btn" data-id="${item.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                swipeCardsGrid.insertAdjacentHTML("beforeend", cardHtml);
+            });
+
+            // Listeners de Swipe
+            document.querySelectorAll(".edit-swipe-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    const s = state.swipeItems.find(item => item.id === id);
+                    if (s) {
+                        document.getElementById("swipe_id").value = s.id;
+                        swipeCompetitorSelect.value = s.competitor_id || "";
+                        document.getElementById("swipe_platform").value = s.platform || "LinkedIn";
+                        document.getElementById("swipe_date").value = s.date_observed || "";
+                        document.getElementById("swipe_url").value = s.url || "";
+                        document.getElementById("swipe_type").value = s.type || "ad";
+                        document.getElementById("swipe_filename").value = s.file_name || "";
+                        document.getElementById("swipe_notes").value = s.notes || "";
+                        document.getElementById("swipe_campaign_name").value = s.campaign_name || "";
+                        document.getElementById("swipe_audience").value = s.audience || "";
+                        document.getElementById("swipe_problem").value = s.problem || "";
+                        document.getElementById("swipe_desire").value = s.desire || "";
+                        document.getElementById("swipe_hook").value = s.hook || "";
+                        document.getElementById("swipe_promise").value = s.promise || "";
+                        document.getElementById("swipe_mechanism").value = s.mechanism || "";
+                        document.getElementById("swipe_proof").value = s.proof || "";
+                        document.getElementById("swipe_offer").value = s.offer || "";
+                        document.getElementById("swipe_cta").value = s.cta || "";
+                        document.getElementById("swipe_landing").value = s.landing || "";
+                        document.getElementById("swipe_tone").value = s.tone || "";
+                        document.getElementById("swipe_objection").value = s.objection || "";
+                        document.getElementById("swipe_funnel").value = s.funnel_stage || "TOFU";
+                        document.getElementById("swipe_psychology").value = s.psychology_flow || "";
+                        document.getElementById("swipe_hook_class").value = s.hook_class || "problema";
+                        
+                        document.getElementById("score_rep").value = s.scoring_repetition || 0;
+                        document.getElementById("val_rep").innerText = s.scoring_repetition || 0;
+                        document.getElementById("score_pers").value = s.scoring_persistence || 0;
+                        document.getElementById("val_pers").innerText = s.scoring_persistence || 0;
+                        document.getElementById("score_diff").value = s.scoring_differentiation || 0;
+                        document.getElementById("val_diff").innerText = s.scoring_differentiation || 0;
+                        document.getElementById("score_rel").value = s.scoring_relevance || 0;
+                        document.getElementById("val_rel").innerText = s.scoring_relevance || 0;
+                        document.getElementById("score_app").value = s.scoring_applicability || 0;
+                        document.getElementById("val_app").innerText = s.scoring_applicability || 0;
+
+                        document.getElementById("swipeFormTitle").innerHTML = `<i class="fa-solid fa-cube-pen"></i> Editar Ficha Swipe File`;
+                        swipeFormContainer.style.display = "block";
+                        swipeFormContainer.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+            });
+
+            document.querySelectorAll(".delete-swipe-btn").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    if (confirm("¿Estás seguro de que deseas eliminar este anuncio descompuesto del Swipe File?")) {
+                        const id = btn.dataset.id;
+                        const res = await fetch(`/api/rrss/swipe-file/${id}`, { method: "DELETE", credentials: "same-origin" });
+                        if (res.ok) {
+                            loadSwipeFile();
+                        } else {
+                            alert("No se pudo eliminar el anuncio.");
+                        }
+                    }
+                });
+            });
+        }
+
+        async function handleSaveSwipe(e) {
+            e.preventDefault();
+            const id = document.getElementById("swipe_id").value;
+            const payload = {
+                competitor_id: swipeCompetitorSelect.value ? parseInt(swipeCompetitorSelect.value, 10) : null,
+                platform: document.getElementById("swipe_platform").value,
+                date_observed: document.getElementById("swipe_date").value,
+                url: document.getElementById("swipe_url").value,
+                type: document.getElementById("swipe_type").value,
+                file_name: document.getElementById("swipe_filename").value,
+                notes: document.getElementById("swipe_notes").value,
+                campaign_name: document.getElementById("swipe_campaign_name").value,
+                audience: document.getElementById("swipe_audience").value,
+                problem: document.getElementById("swipe_problem").value,
+                desire: document.getElementById("swipe_desire").value,
+                hook: document.getElementById("swipe_hook").value,
+                promise: document.getElementById("swipe_promise").value,
+                mechanism: document.getElementById("swipe_mechanism").value,
+                proof: document.getElementById("swipe_proof").value,
+                offer: document.getElementById("swipe_offer").value,
+                cta: document.getElementById("swipe_cta").value,
+                landing: document.getElementById("swipe_landing").value,
+                tone: document.getElementById("swipe_tone").value,
+                objection: document.getElementById("swipe_objection").value,
+                funnel_stage: document.getElementById("swipe_funnel").value,
+                psychology_flow: document.getElementById("swipe_psychology").value,
+                hook_class: document.getElementById("swipe_hook_class").value,
+                
+                scoring_repetition: parseInt(document.getElementById("score_rep").value, 10),
+                scoring_persistence: parseInt(document.getElementById("score_pers").value, 10),
+                scoring_differentiation: parseInt(document.getElementById("score_diff").value, 10),
+                scoring_relevance: parseInt(document.getElementById("score_rel").value, 10),
+                scoring_applicability: parseInt(document.getElementById("score_app").value, 10)
+            };
+
+            const isEdit = id !== "";
+            const url = isEdit ? `/api/rrss/swipe-file/${id}` : "/api/rrss/swipe-file";
+            const method = isEdit ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                credentials: "same-origin"
+            });
+
+            if (res.ok) {
+                swipeForm.reset();
+                document.getElementById("swipe_id").value = "";
+                swipeFormContainer.style.display = "none";
+                loadSwipeFile();
+            } else {
+                alert("Error al guardar anuncio en Swipe File.");
+            }
+        }
+
+        // --- HIPÓTESIS DE TEST (Pestaña 4) ---
+        async function loadHypotheses() {
+            try {
+                const res = await fetch("/api/rrss/hypotheses", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.hypotheses = data?.hypotheses || [];
+                    renderHypotheses();
+                    updateHypothesisSelects();
+                }
+            } catch (err) {
+                console.error("Error cargando hipótesis:", err);
+            }
+        }
+
+        function renderHypotheses() {
+            hypothesesTableBody.innerHTML = "";
+            if (state.hypotheses.length === 0) {
+                hypothesesTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 24px;"><i class="fa-regular fa-flask"></i> No hay hipótesis registradas en este momento.</td></tr>`;
+                return;
+            }
+
+            state.hypotheses.forEach(h => {
+                const scoreRel = h.scoring_relevance || 0;
+                const scoreApp = h.scoring_applicability || 0;
+                const prioritySum = scoreRel + scoreApp;
+
+                let priorityClass = "badge-danger";
+                if (prioritySum >= 8) priorityClass = "badge-success";
+                else if (prioritySum >= 5) priorityClass = "badge-warning";
+
+                const statusBadges = {
+                    draft: `<span class="badge badge-tofu">Borrador</span>`,
+                    testing: `<span class="badge badge-mofu"><i class="fa-solid fa-spinner fa-spin"></i> Testeando</span>`,
+                    validated: `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Validado</span>`,
+                    rejected: `<span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> Rechazado</span>`
+                };
+                const statusBadge = statusBadges[h.status] || statusBadges["draft"];
+
+                const rowHtml = `
+                    <tr>
+                        <td>
+                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Obs: "${escapeHtml(h.observation)}"</div>
+                            <strong style="font-size: 13px; line-height: 1.4; color: var(--text);">${escapeHtml(h.hypothesis)}</strong>
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; margin-bottom: 2px;"><strong>Test:</strong> ${escapeHtml(h.test)}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);"><strong>Ctrl:</strong> ${escapeHtml(h.control)}</div>
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; margin-bottom: 2px;"><strong>Métrica:</strong> ${escapeHtml(h.metric)}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);"><strong>Esperado:</strong> ${escapeHtml(h.expected_result)}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge ${priorityClass}" title="Relevancia: ${scoreRel} + Aplicabilidad: ${scoreApp}">${prioritySum}/10</span>
+                        </td>
+                        <td style="text-align: center;">
+                            ${statusBadge}
+                        </td>
+                        <td>
+                            <div class="cell-actions" style="justify-content: center; gap: 4px;">
+                                <select class="editable-cell change-status-select" data-id="${h.id}" style="font-size: 11px; padding: 2px; height: 26px; border-radius: 4px;">
+                                    <option value="draft" ${h.status === "draft" ? "selected" : ""}>Borrador</option>
+                                    <option value="testing" ${h.status === "testing" ? "selected" : ""}>Probar</option>
+                                    <option value="validated" ${h.status === "validated" ? "selected" : ""}>Validar</option>
+                                    <option value="rejected" ${h.status === "rejected" ? "selected" : ""}>Rechazar</option>
+                                </select>
+                                <button class="btn btn-secondary btn-sm edit-hyp-btn" data-id="${h.id}" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn btn-danger btn-sm delete-hyp-btn" data-id="${h.id}" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                hypothesesTableBody.insertAdjacentHTML("beforeend", rowHtml);
+            });
+
+            // Listeners
+            document.querySelectorAll(".change-status-select").forEach(sel => {
+                sel.addEventListener("change", async (e) => {
+                    const id = e.target.dataset.id;
+                    const status = e.target.value;
+                    const h = state.hypotheses.find(hyp => hyp.id === parseInt(id, 10));
+                    if (h) {
+                        const payload = { ...h, status };
+                        const res = await fetch(`/api/rrss/hypotheses/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                            credentials: "same-origin"
+                        });
+                        if (res.ok) {
+                            loadHypotheses();
+                        } else {
+                            alert("No se pudo cambiar el estado.");
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll(".edit-hyp-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    const h = state.hypotheses.find(hyp => hyp.id === id);
+                    if (h) {
+                        document.getElementById("hyp_id").value = h.id;
+                        document.getElementById("hyp_obs").value = h.observation || "";
+                        document.getElementById("hyp_text").value = h.hypothesis || "";
+                        document.getElementById("hyp_test").value = h.test || "";
+                        document.getElementById("hyp_control").value = h.control || "";
+                        document.getElementById("hyp_metric").value = h.metric || "";
+                        document.getElementById("hyp_expected").value = h.expected_result || "";
+                        document.getElementById("hyp_score_rel").value = h.scoring_relevance || 5;
+                        document.getElementById("hyp_score_app").value = h.scoring_applicability || 5;
+
+                        document.getElementById("hypothesisFormTitle").innerHTML = `<i class="fa-solid fa-flask-open"></i> Editar Hipótesis de Test`;
+                        hypothesisFormContainer.style.display = "block";
+                        hypothesisFormContainer.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+            });
+
+            document.querySelectorAll(".delete-hyp-btn").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    if (confirm("¿Estás seguro de que deseas eliminar esta hipótesis de experimentación?")) {
+                        const id = btn.dataset.id;
+                        const res = await fetch(`/api/rrss/hypotheses/${id}`, { method: "DELETE", credentials: "same-origin" });
+                        if (res.ok) {
+                            loadHypotheses();
+                        } else {
+                            alert("No se pudo eliminar la hipótesis.");
+                        }
+                    }
+                });
+            });
+        }
+
+        async function handleSaveHypothesis(e) {
+            e.preventDefault();
+            const id = document.getElementById("hyp_id").value;
+            const payload = {
+                observation: document.getElementById("hyp_obs").value,
+                hypothesis: document.getElementById("hyp_text").value,
+                test: document.getElementById("hyp_test").value,
+                control: document.getElementById("hyp_control").value,
+                metric: document.getElementById("hyp_metric").value,
+                expected_result: document.getElementById("hyp_expected").value,
+                scoring_relevance: parseInt(document.getElementById("hyp_score_rel").value, 10),
+                scoring_applicability: parseInt(document.getElementById("hyp_score_app").value, 10),
+                status: "draft"
+            };
+
+            const isEdit = id !== "";
+            const url = isEdit ? `/api/rrss/hypotheses/${id}` : "/api/rrss/hypotheses";
+            const method = isEdit ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                credentials: "same-origin"
+            });
+
+            if (res.ok) {
+                hypothesisForm.reset();
+                document.getElementById("hyp_id").value = "";
+                hypothesisFormContainer.style.display = "none";
+                loadHypotheses();
+            } else {
+                alert("Error al guardar hipótesis.");
+            }
+        }
+
+        function updateHypothesisSelects() {
+            // Rellenar selector de hipótesis validadas para los briefings
+            const valids = state.hypotheses.filter(h => h.status === "validated");
+            const options = valids.map(h => `<option value="${h.id}">Validada: ${escapeHtml(h.hypothesis.substring(0, 45))}...</option>`).join("");
+            briefHypSelect.innerHTML = `<option value="">-- Sin hipótesis (Briefing libre) --</option>` + options;
+        }
+
+        // --- CAMPAIGN BRIEFINGS (Pestaña 5) ---
+        async function loadCampaignBriefs() {
+            try {
+                const res = await fetch("/api/rrss/campaign-briefs", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.briefs = data?.briefs || [];
+                    renderCampaignBriefs();
+                    updateBriefSelectorInPublisher();
+                }
+            } catch (err) {
+                console.error("Error cargando briefings:", err);
+            }
+        }
+
+        function renderCampaignBriefs() {
+            briefsGridList.innerHTML = "";
+            if (state.briefs.length === 0) {
+                briefsGridList.innerHTML = `<div class="empty-state col-span-3" style="grid-column: 1 / -1;"><i class="fa-regular fa-folder-open"></i><p>No has diseñado ningún Briefing Creativo. Crea uno para automatizar campañas estructuradas.</p></div>`;
+                return;
+            }
+
+            state.briefs.forEach(b => {
+                const cardHtml = `
+                    <div class="swipe-card" style="border: 1px solid rgba(var(--primary-rgb), 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                        <div class="swipe-card-header" style="background: rgba(var(--primary-rgb), 0.03); border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);">
+                            <span class="pub-card-platform" style="color: var(--primary); font-weight:700;"><i class="fa-solid fa-bullseye"></i> Campaña Propia</span>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="btn btn-secondary btn-xs edit-brief-btn" data-id="${b.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-danger btn-xs delete-brief-btn" data-id="${b.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="swipe-card-body" style="padding: 16px;">
+                            <h3 class="swipe-title" style="font-size: 15px; margin-bottom: 8px; color: var(--text);">${escapeHtml(b.name)}</h3>
+                            <div style="font-size: 12px; margin-bottom: 12px; color: var(--text-muted);">
+                                <strong>Objetivo:</strong> ${escapeHtml(b.goal)}
+                            </div>
+                            
+                            <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px solid rgba(var(--primary-rgb), 0.1); padding: 8px 10px; border-radius: 6px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; line-height: 1.4;">
+                                <div><strong>Gancho (Hook):</strong> <span class="quote-text" style="color: var(--primary);">"${escapeHtml(b.hook)}"</span></div>
+                                <div><strong>Promesa:</strong> <strong>${escapeHtml(b.promise)}</strong></div>
+                                <div><strong>Mecanismo:</strong> <em>${escapeHtml(b.mechanism)}</em></div>
+                                <div><strong>Ángulo:</strong> ${escapeHtml(b.angle)}</div>
+                            </div>
+                            
+                            <div class="comp-details-list" style="margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; font-size: 11px;">
+                                <div><strong>Público:</strong> ${escapeHtml(b.audience)}</div>
+                                <div><strong>Problema:</strong> ${escapeHtml(b.problem)}</div>
+                                <div><strong>Deseo:</strong> ${escapeHtml(b.desire)}</div>
+                                <div><strong>CTA / Botón:</strong> <span class="badge badge-tone" style="font-size: 9px; display: inline-block;">${escapeHtml(b.cta)}</span></div>
+                                ${b.landing ? `<div><strong>Destino:</strong> <a href="${b.landing}" target="_blank" style="color:var(--primary);">${b.landing}</a></div>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                briefsGridList.insertAdjacentHTML("beforeend", cardHtml);
+            });
+
+            // Listeners de Briefings
+            document.querySelectorAll(".edit-brief-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    const b = state.briefs.find(brief => brief.id === id);
+                    if (b) {
+                        document.getElementById("brief_id").value = b.id;
+                        briefHypSelect.value = b.hypothesis_id || "";
+                        document.getElementById("brief_name").value = b.name || "";
+                        document.getElementById("brief_goal").value = b.goal || "";
+                        document.getElementById("brief_audience").value = b.audience || "";
+                        document.getElementById("brief_problem").value = b.problem || "";
+                        document.getElementById("brief_desire").value = b.desire || "";
+                        document.getElementById("brief_insight").value = b.insight || "";
+                        document.getElementById("brief_angle").value = b.angle || "";
+                        document.getElementById("brief_hook").value = b.hook || "";
+                        document.getElementById("brief_promise").value = b.promise || "";
+                        document.getElementById("brief_mechanism").value = b.mechanism || "";
+                        document.getElementById("brief_proof").value = b.proof || "";
+                        document.getElementById("brief_offer").value = b.offer || "";
+                        document.getElementById("brief_cta").value = b.cta || "";
+                        document.getElementById("brief_format").value = b.format || "";
+                        document.getElementById("brief_landing").value = b.landing || "";
+                        document.getElementById("brief_kpi").value = b.primary_kpi || "";
+
+                        document.getElementById("briefFormTitle").innerHTML = `<i class="fa-solid fa-file-pen"></i> Editar Briefing Creativo`;
+                        briefFormContainer.style.display = "block";
+                        briefFormContainer.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+            });
+
+            document.querySelectorAll(".delete-brief-btn").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    if (confirm("¿Estás seguro de que deseas eliminar este Briefing de Campaña?")) {
+                        const id = btn.dataset.id;
+                        const res = await fetch(`/api/rrss/campaign-briefs/${id}`, { method: "DELETE", credentials: "same-origin" });
+                        if (res.ok) {
+                            loadCampaignBriefs();
+                        } else {
+                            alert("No se pudo eliminar el briefing.");
+                        }
+                    }
+                });
+            });
+        }
+
+        async function handleSaveBrief(e) {
+            e.preventDefault();
+            const id = document.getElementById("brief_id").value;
+            const payload = {
+                hypothesis_id: briefHypSelect.value ? parseInt(briefHypSelect.value, 10) : null,
+                name: document.getElementById("brief_name").value,
+                goal: document.getElementById("brief_goal").value,
+                audience: document.getElementById("brief_audience").value,
+                problem: document.getElementById("brief_problem").value,
+                desire: document.getElementById("brief_desire").value,
+                insight: document.getElementById("brief_insight").value,
+                angle: document.getElementById("brief_angle").value,
+                hook: document.getElementById("brief_hook").value,
+                promise: document.getElementById("brief_promise").value,
+                mechanism: document.getElementById("brief_mechanism").value,
+                proof: document.getElementById("brief_proof").value,
+                offer: document.getElementById("brief_offer").value,
+                cta: document.getElementById("brief_cta").value,
+                format: document.getElementById("brief_format").value,
+                landing: document.getElementById("brief_landing").value,
+                primary_kpi: document.getElementById("brief_kpi").value
+            };
+
+            const isEdit = id !== "";
+            const url = isEdit ? `/api/rrss/campaign-briefs/${id}` : "/api/rrss/campaign-briefs";
+            const method = isEdit ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                credentials: "same-origin"
+            });
+
+            if (res.ok) {
+                briefForm.reset();
+                document.getElementById("brief_id").value = "";
+                briefFormContainer.style.display = "none";
+                loadCampaignBriefs();
+            } else {
+                alert("Error al guardar briefing.");
+            }
+        }
+
+        function updateBriefSelectorInPublisher() {
+            // Rellenar selectores de briefings en Publicador (única y lote)
+            const options = state.briefs.map(b => `<option value="${b.id}">Campaña: ${escapeHtml(b.name)}</option>`).join("");
+            const optionHtml = `<option value="">-- Sin campaña (Generación libre) --</option>` + options;
+            
+            campaignBriefIdSelect.innerHTML = optionHtml;
+            batchCampaignBriefIdSelect.innerHTML = optionHtml;
+        }
+
+        // --- ENLACE DE BRIEFING A GENERACIÓN (Pestaña 1) ---
+        campaignBriefIdSelect.addEventListener("change", (e) => {
+            const id = e.target.value;
+            if (id) {
+                const b = state.briefs.find(brief => brief.id === parseInt(id, 10));
+                if (b) {
+                    // Pre-rellenar campos y avisar
+                    topicInput.value = b.name + ": " + b.angle;
+                    briefingHelpText.style.display = "block";
+                    briefingHelpText.innerHTML = `<i class="fa-solid fa-circle-info"></i> La IA aplicará los ganchos y la promesa: <strong>"${escapeHtml(b.promise)}"</strong>.`;
+                }
+            } else {
+                briefingHelpText.style.display = "none";
+            }
+        });
+
+        batchCampaignBriefIdSelect.addEventListener("change", (e) => {
+            const id = e.target.value;
+            if (id) {
+                const b = state.briefs.find(brief => brief.id === parseInt(id, 10));
+                if (b) {
+                    batchTopicInput.value = b.name + ": " + b.angle;
+                    batchBriefingHelpText.style.display = "block";
+                    batchBriefingHelpText.innerHTML = `<i class="fa-solid fa-circle-info"></i> Se generará un lote de publicaciones distribuidas variando el dolor y separando variables.`;
+                }
+            } else {
+                batchBriefingHelpText.style.display = "none";
+            }
+        });
+
+
+        // Generar una nueva publicación única mediante Gemini
+        async function handleGenerate(e) {
+            e.preventDefault();
+            if (state.isGenerating) return;
+
+            state.isGenerating = true;
+            setGeneratingState(true, generateBtn, "Generando con Gemini...");
+            clearFeedback();
+
+            const payload = {
+                platform: platformInput.value,
+                topic: topicInput.value,
+                tone: toneInput.value,
+                keywords: keywordsInput.value,
+                length: lengthInput.value,
+                campaignBriefId: campaignBriefIdSelect.value ? parseInt(campaignBriefIdSelect.value, 10) : null
+            };
+
+            try {
+                const res = await fetch("/api/rrss/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data?.error?.message || "Ocurrió un error al generar la publicación.");
+                }
+
+                // Cargar en el editor
+                state.currentPublicationId = null;
+                state.editingBatchIndex = null;
+                editorContent.value = data.data.content;
+                
+                // Actualizar insignias
+                platformBadge.textContent = data.data.platform;
+                platformBadge.className = `badge badge-${data.data.platform.replace('/', '').toLowerCase()}`;
+                toneBadge.textContent = data.data.tone;
+                toneBadge.className = `badge badge-tone`;
+
+                saveBtnText.textContent = "Guardar en Historial";
+                deleteBtn.style.display = "none";
+
+                showFeedback("¡Publicación generada correctamente con Gemini!", "success", editorFeedback);
+            } catch (err) {
+                showFeedback(err.message, "danger", editorFeedback);
+            } finally {
+                state.isGenerating = false;
+                setGeneratingState(false, generateBtn, "Generar Publicación");
+            }
+        }
+
+        // Generar lote de publicaciones mediante Gemini
+        async function handleGenerateBatch(e) {
+            e.preventDefault();
+            if (state.isGenerating) return;
+
+            // Obtener plataformas marcadas
+            const selectedPlatforms = Array.from(document.querySelectorAll("input[name='batchPlatforms']:checked"))
+                .map(el => el.value);
+
+            if (selectedPlatforms.length === 0) {
+                alert("Debes seleccionar al menos una red social para planificar.");
+                return;
+            }
+
+            state.isGenerating = true;
+            setGeneratingState(true, generateBatchBtn, "Generando lote con Gemini...");
+            clearFeedback();
+
+            const payload = {
+                platforms: selectedPlatforms,
+                topic: batchTopicInput.value,
+                tone: batchToneInput.value,
+                month: batchMonthInput.value,
+                year: batchYearInput.value,
+                countPerPlatform: parseInt(postsPerPlatformInput.value, 10),
+                trends: state.trends,
+                campaignBriefId: batchCampaignBriefIdSelect.value ? parseInt(batchCampaignBriefIdSelect.value, 10) : null
+            };
+
+            try {
+                const res = await fetch("/api/rrss/generate-batch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data?.error?.message || "Ocurrió un error al generar el lote.");
+                }
+
+                state.batchPublications = data.data.publications || [];
+                state.editingBatchIndex = null;
+
+                renderBatchPreview();
+                switchTab("batch"); // Asegurar que renderice el panel de lote
+                showFeedback(`¡Se han generado ${state.batchPublications.length} publicaciones de forma estructurada!`, "success", batchFeedback);
+            } catch (err) {
+                showFeedback(err.message, "danger", batchFeedback);
+            } finally {
+                state.isGenerating = false;
+                setGeneratingState(false, generateBatchBtn, "Generar Calendario Mensual");
+            }
+        }
+
+        // Renderizar la tabla con la previsualización del lote generado
+        function renderBatchPreview() {
+            if (state.batchPublications.length === 0) {
+                batchPreviewSection.style.display = "none";
+                return;
+            }
+
+            batchPreviewSection.style.display = "block";
+            batchTableBody.innerHTML = state.batchPublications.map((pub, idx) => {
+                const date = new Date(pub.scheduled_at * 1000).toLocaleDateString("es-ES", {
+                    day: "2-digit",
+                    month: "2-digit"
+                });
+
+                const icon = platformIcons[pub.platform] || "fa-solid fa-share-nodes";
+                const shortContent = pub.content.length > 90 ? pub.content.substring(0, 87) + "..." : pub.content;
+
+                return `
+                    <tr>
+                        <td><strong><i class="${icon}"></i> ${pub.platform}</strong></td>
+                        <td>
+                            <input type="number" class="editable-cell day-input" data-idx="${idx}" min="1" max="28" value="${new Date(pub.scheduled_at * 1000).getDate()}" style="width: 50px; text-align: center;">
+                        </td>
+                        <td>
+                            <input type="text" class="editable-cell topic-input" data-idx="${idx}" value="${escapeHtml(pub.topic)}">
+                        </td>
+                        <td>
+                            <span class="content-preview">${escapeHtml(shortContent)}</span>
+                        </td>
+                        <td>
+                            <div class="cell-actions">
+                                <button class="btn btn-secondary btn-sm edit-row-btn" data-idx="${idx}" title="Editar contenido en el editor completo">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm delete-row-btn" data-idx="${idx}" title="Quitar del lote">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            // Listeners de los inputs editables en la tabla
+            document.querySelectorAll(".day-input").forEach(input => {
+                input.addEventListener("change", (e) => {
+                    const idx = parseInt(e.target.dataset.idx, 10);
+                    const day = parseInt(e.target.value, 10);
+                    if (day >= 1 && day <= 28) {
+                        const originalDate = new Date(state.batchPublications[idx].scheduled_at * 1000);
+                        originalDate.setDate(day);
+                        state.batchPublications[idx].scheduled_at = Math.floor(originalDate.getTime() / 1000);
+                    }
+                });
+            });
+
+            document.querySelectorAll(".topic-input").forEach(input => {
+                input.addEventListener("input", (e) => {
+                    const idx = parseInt(e.target.dataset.idx, 10);
+                    state.batchPublications[idx].topic = e.target.value;
+                });
+            });
+
+            // Listeners de botones de fila
+            document.querySelectorAll(".edit-row-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const btnEl = e.target.closest(".edit-row-btn");
+                    const idx = parseInt(btnEl.dataset.idx, 10);
+                    openBatchItemInEditor(idx);
+                });
+            });
+
+            document.querySelectorAll(".delete-row-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const btnEl = e.target.closest(".delete-row-btn");
+                    const idx = parseInt(btnEl.dataset.idx, 10);
+                    state.batchPublications.splice(idx, 1);
+                    renderBatchPreview();
+                });
+            });
+        }
+
+        // Cargar un post del lote en el editor unitario clásico para edición detallada
+        function openBatchItemInEditor(idx) {
+            const pub = state.batchPublications[idx];
+            if (!pub) return;
+
+            state.editingBatchIndex = idx;
+            state.currentPublicationId = null; // No es un post unitario de BD
+
+            editorContent.value = pub.content;
+            
+            // Actualizar insignias
+            platformBadge.textContent = pub.platform;
+            platformBadge.className = `badge badge-${pub.platform.replace('/', '').toLowerCase()}`;
+            toneBadge.textContent = pub.tone;
+            toneBadge.className = `badge badge-tone`;
+
+            saveBtnText.textContent = "Actualizar en Lote";
+            deleteBtn.style.display = "none";
+
+            // Mostrar el editor y ocultar la tabla
+            editorSection.style.display = "block";
+            batchPreviewSection.style.display = "none";
+            clearFeedback();
+        }
+
+        // Guardar o Actualizar publicación
+        async function handleSave() {
+            if (state.isSaving) return;
+
+            // Caso A: Estamos editando un elemento del lote en memoria
+            if (state.editingBatchIndex !== null) {
+                state.batchPublications[state.editingBatchIndex].content = editorContent.value;
+                state.editingBatchIndex = null;
+                
+                // Regresar a la vista del lote
+                editorSection.style.display = "none";
+                batchPreviewSection.style.display = "block";
+                renderBatchPreview();
+                showFeedback("Publicación actualizada en el lote local.", "success", batchFeedback);
+                return;
+            }
+
+            // Caso B: Guardar publicación individual normal
+            if (!editorContent.value.trim()) return;
+
+            state.isSaving = true;
+            saveBtn.disabled = true;
+            clearFeedback();
+
+            const isNew = state.currentPublicationId === null;
+            const url = isNew 
+                ? "/api/rrss/publications" 
+                : `/api/rrss/publications/${state.currentPublicationId}`;
+            const method = isNew ? "POST" : "PUT";
+
+            const payload = {
+                platform: platformBadge.textContent,
+                topic: isNew ? topicInput.value || "Publicación Generada" : (state.publications.find(p => p.id === state.currentPublicationId)?.topic || "Publicación Generada"),
+                tone: toneBadge.textContent,
+                content: editorContent.value,
+                status: "draft"
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data?.error?.message || "Error al guardar la publicación.");
+                }
+
+                showFeedback(isNew ? "Publicación guardada en el historial." : "Publicación actualizada correctamente.", "success", editorFeedback);
+
+                // Recargar historial
+                await loadPublications();
+
+                if (isNew && data.data?.id) {
+                    selectPublication(data.data.id);
+                }
+            } catch (err) {
+                showFeedback(err.message, "danger", editorFeedback);
+            } finally {
+                state.isSaving = false;
+                saveBtn.disabled = false;
+            }
+        }
+
+        // Guardar lote completo en la Base de Datos
+        async function handleSaveBatch() {
+            if (state.batchPublications.length === 0 || state.isSaving) return;
+
+            state.isSaving = true;
+            saveBatchBtn.disabled = true;
+            clearFeedback();
+
+            try {
+                const res = await fetch("/api/rrss/publications/batch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        publications: state.batchPublications
+                    }),
+                    credentials: "same-origin"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data?.error?.message || "Error al guardar el lote.");
+                }
+
+                showFeedback(`¡Se han guardado correctamente ${state.batchPublications.length} publicaciones!`, "success", batchFeedback);
+                
+                // Limpiar lote en memoria y recargar historial
+                state.batchPublications = [];
+                state.editingBatchIndex = null;
+                batchPreviewSection.style.display = "none";
+                
+                await loadPublications();
+                switchTab("single"); // Volver a única
+            } catch (err) {
+                showFeedback(err.message, "danger", batchFeedback);
+            } finally {
+                state.isSaving = false;
+                saveBatchBtn.disabled = false;
+            }
+        }
+
+        // Eliminar publicación individual de la base de datos
+        async function handleDelete() {
+            if (!state.currentPublicationId) return;
+            if (!confirm("¿Estás seguro de que deseas eliminar esta publicación de forma permanente?")) return;
+
+            clearFeedback();
+            try {
+                const res = await fetch(`/api/rrss/publications/${state.currentPublicationId}`, {
+                    method: "DELETE",
+                    credentials: "same-origin"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data?.error?.message || "Error al eliminar la publicación.");
+                }
+
+                showFeedback("Publicación eliminada correctamente.", "success", editorFeedback);
+                
+                // Limpiar editor
+                state.currentPublicationId = null;
+                editorContent.value = "";
+                platformBadge.textContent = "Plataforma";
+                platformBadge.className = "badge";
+                toneBadge.textContent = "Tono";
+                toneBadge.className = "badge";
+                saveBtnText.textContent = "Guardar en Historial";
+                deleteBtn.style.display = "none";
+
+                // Recargar historial
+                await loadPublications();
+            } catch (err) {
+                showFeedback(err.message, "danger", editorFeedback);
+            }
+        }
+
+        // Descargar publicaciones de lote en CSV
+        function handleExportCsv() {
+            if (state.batchPublications.length === 0) return;
+            exportToCsv(state.batchPublications, `plan_rrss_${batchMonthInput.value}_${batchYearInput.value}`);
+        }
+
+        // Descargar historial filtrado en CSV
+        function handleExportHistoryCsv() {
+            const filter = filterPlatform.value;
+            const filtered = filter === "all" 
+                ? state.publications 
+                : state.publications.filter(p => p.platform === filter);
+
+            if (filtered.length === 0) {
+                alert("No hay publicaciones en el historial para exportar.");
+                return;
+            }
+
+            exportToCsv(filtered, `historico_rrss_${filter}`);
+        }
+
+        // Función reutilizable para exportar array a CSV y forzar descarga
+        function exportToCsv(dataArray, filenamePrefix) {
+            const headers = ["Red Social", "Tema", "Tono", "Contenido", "Fecha Planificada", "Estado"];
+            const rows = dataArray.map(pub => {
+                const date = pub.scheduled_at 
+                    ? new Date(pub.scheduled_at * 1000).toISOString().split('T')[0]
+                    : new Date(pub.created_at * 1000).toISOString().split('T')[0];
+
+                return [
+                    pub.platform,
+                    pub.topic,
+                    pub.tone,
+                    pub.content,
+                    date,
+                    pub.status || "draft"
+                ];
+            });
+
+            // Usar UTF-8 BOM (\uFEFF) para que Excel reconozca tildes y caracteres especiales
+            const csvContent = "\uFEFF" + [
+                headers.join(","),
+                ...rows.map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(","))
+            ].join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Copiar contenido del editor al portapapeles
+        function handleCopy() {
+            const text = editorContent.value;
+            if (!text.trim()) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span class="btn-text">¡Copiado!</span>`;
+                copyBtn.classList.add("btn-success");
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove("btn-success");
+                }, 2000);
+            }).catch(err => {
+                console.error("Error al copiar texto: ", err);
+            });
+        }
+
+        // Cerrar sesión
+        async function handleLogout() {
+            try {
+                const res = await fetch("/api/rrss/logout", {
+                    method: "POST",
+                    credentials: "same-origin"
+                });
+                if (res.ok) {
+                    window.location.href = "login.html";
+                }
+            } catch (err) {
+                console.error("Error al cerrar sesión:", err);
+            }
+        }
+
+        // Cambiar estados visuales de los botones al generar
+        function setGeneratingState(isGenerating, btnElement, loadingText) {
+            btnElement.disabled = isGenerating;
+            const normalState = btnElement.querySelector(".normal-state");
+            const loadingState = btnElement.querySelector(".loading-state");
+            
+            if (isGenerating) {
+                if (normalState) normalState.style.display = "none";
+                if (loadingState) {
+                    loadingState.style.display = "inline-flex";
+                    loadingState.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${loadingText}`;
+                }
+            } else {
+                if (normalState) normalState.style.display = "inline-flex";
+                if (loadingState) loadingState.style.display = "none";
+            }
+        }
+
+        // Mostrar retroalimentación al usuario
+        function showFeedback(message, type, containerElement) {
+            containerElement.textContent = message;
+            containerElement.className = `feedback-msg visible feedback-${type}`;
+        }
+
+        function clearFeedback() {
+            editorFeedback.textContent = "";
+            editorFeedback.className = "feedback-msg";
+            batchFeedback.textContent = "";
+            batchFeedback.className = "feedback-msg";
+        }
+
+        // Utilidades
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Configurar Mes y Año por defecto
+        function setDefaultDate() {
+            const now = new Date();
+            batchMonthInput.value = now.getMonth() + 1; // getMonth es 0-indexed
+            batchYearInput.value = now.getFullYear();
+        }
+
+        // Cargar reporte de tendencias del nicho
+        async function loadTrends() {
+            trendsLoading.style.display = "block";
+            trendsData.style.display = "none";
+
+            try {
+                const res = await fetch("/api/rrss/trends", { credentials: "same-origin" });
+                if (res.ok) {
+                    const responseBody = await res.json();
+                    const trends = responseBody?.data?.trends || {};
+                    const hasData = trends.monthlyTrends || trends.monthly_trends || trends.weeklyTrends || trends.weekly_trends;
+                    if (!hasData) {
+                        showErrorTrends();
+                    } else {
+                        state.trends = trends;
+                        renderTrends(trends);
+                    }
+                } else {
+                    console.error("Error al obtener tendencias.");
+                    showErrorTrends();
+                }
+            } catch (err) {
+                console.error("Error de conexión al cargar tendencias:", err);
+                showErrorTrends();
+            } finally {
+                trendsLoading.style.display = "none";
+                trendsData.style.display = "grid";
+            }
+        }
+
+        // Mostrar aviso de error si falla la conexión de tendencias
+        function showErrorTrends() {
+            monthlyTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--danger); padding: 8px 0;"><i class="fa-solid fa-triangle-exclamation"></i> No se han podido cargar las tendencias en este momento.</p>`;
+            weeklyTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">Pulsa en "Analizar Tendencias" arriba a la derecha para reintentar la conexión.</p>`;
+            competitorTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">Inteligencia competitiva desactivada temporalmente.</p>`;
+        }
+
+        // Renderizar tendencias en el panel superior
+        function renderTrends(trends) {
+            const monthlyList = trends.monthlyTrends || trends.monthly_trends || trends.monthly || [];
+            const weeklyList = trends.weeklyTrends || trends.weekly_trends || trends.weekly || [];
+            const competitorList = trends.competitorAnalysis || trends.competitor_analysis || trends.competitors || [];
+
+            // Actualizar título del mes
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            monthlyTrendsTitle.textContent = `Temas Clave de ${meses[new Date().getMonth()]}`;
+
+            // Mapeo de iconos de estado
+            const statusIcons = {
+                "up": `<span class="trend-status trend-status-up"><i class="fa-solid fa-arrow-trend-up"></i> En alza</span>`,
+                "down": `<span class="trend-status trend-status-down"><i class="fa-solid fa-arrow-trend-down"></i> A la baja</span>`,
+                "stable": `<span class="trend-status trend-status-stable"><i class="fa-solid fa-minus"></i> Estable</span>`
+            };
+
+            const platformIconsSmall = {
+                "LinkedIn": "fa-brands fa-linkedin",
+                "X/Twitter": "fa-brands fa-x-twitter",
+                "Instagram": "fa-brands fa-instagram",
+                "Facebook": "fa-brands fa-facebook"
+            };
+
+            const sentimentEmojis = {
+                "Frustración": "😠",
+                "Incertidumbre": "😨",
+                "Alivio": "😌",
+                "Curiosidad": "🤔",
+                "Interés": "💡"
+            };
+
+            // Renderizar mensual
+            if (monthlyList.length === 0) {
+                monthlyTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted);">No hay tendencias mensuales disponibles.</p>`;
+            } else {
+                monthlyTrendsList.innerHTML = monthlyList.map(item => {
+                    const topic = item.topic || item.tema || item.title || "";
+                    const engagement = item.engagementRate || item.engagement_rate || item.engagement || "0%";
+                    const likes = item.avgLikes !== undefined ? item.avgLikes : (item.avg_likes || item.likes || 0);
+                    const comments = item.avgComments !== undefined ? item.avgComments : (item.avg_comments || item.comments || 0);
+                    const platform = item.bestPlatform || item.best_platform || item.platform || "LinkedIn";
+                    const status = item.status || item.tendencia || "stable";
+                    const sentiment = item.sentiment || item.sentimiento || "Interés";
+
+                    const statusIcon = statusIcons[status] || statusIcons["stable"];
+                    const platIcon = platformIconsSmall[platform] || "fa-solid fa-share-nodes";
+                    const sentEmoji = sentimentEmojis[sentiment] || "💡";
+                    return `
+                        <div class="trend-item" data-topic="${escapeHtml(topic)}">
+                            <div class="trend-info">
+                                <span class="trend-topic">${escapeHtml(topic)}</span>
+                                <div class="trend-meta">
+                                    <span><i class="${platIcon}"></i> ${platform}</span>
+                                    <span><i class="fa-regular fa-thumbs-up"></i> ~${likes}</span>
+                                    <span><i class="fa-regular fa-comment"></i> ~${comments}</span>
+                                    <span>${sentEmoji} ${sentiment}</span>
+                                </div>
+                            </div>
+                            <div class="trend-stats">
+                                <span class="trend-engagement">${engagement}</span>
+                                ${statusIcon}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            // Renderizar semanal
+            if (weeklyList.length === 0) {
+                weeklyTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted);">No hay tendencias semanales disponibles.</p>`;
+            } else {
+                weeklyTrendsList.innerHTML = weeklyList.map(item => {
+                    const topic = item.topic || item.tema || item.title || "";
+                    const engagement = item.engagementRate || item.engagement_rate || item.engagement || "0%";
+                    const likes = item.avgLikes !== undefined ? item.avgLikes : (item.avg_likes || item.likes || 0);
+                    const comments = item.avgComments !== undefined ? item.avgComments : (item.avg_comments || item.comments || 0);
+                    const platform = item.bestPlatform || item.best_platform || item.platform || "LinkedIn";
+                    const status = item.status || item.tendencia || "stable";
+                    const sentiment = item.sentiment || item.sentimiento || "Interés";
+
+                    const statusIcon = statusIcons[status] || statusIcons["stable"];
+                    const platIcon = platformIconsSmall[platform] || "fa-solid fa-share-nodes";
+                    const sentEmoji = sentimentEmojis[sentiment] || "💡";
+                    return `
+                        <div class="trend-item" data-topic="${escapeHtml(topic)}">
+                            <div class="trend-info">
+                                <span class="trend-topic">${escapeHtml(topic)}</span>
+                                <div class="trend-meta">
+                                    <span><i class="${platIcon}"></i> ${platform}</span>
+                                    <span><i class="fa-regular fa-thumbs-up"></i> ~${likes}</span>
+                                    <span><i class="fa-regular fa-comment"></i> ~${comments}</span>
+                                    <span>${sentEmoji} ${sentiment}</span>
+                                </div>
+                            </div>
+                            <div class="trend-stats">
+                                <span class="trend-engagement">${engagement}</span>
+                                ${statusIcon}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            // Renderizar competidores
+            if (competitorList.length === 0) {
+                competitorTrendsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted);">No hay análisis de competidores disponible.</p>`;
+            } else {
+                competitorTrendsList.innerHTML = competitorList.map(item => {
+                    const competitor = item.competitor || "Declarando";
+                    const topic = item.postTopic || item.topic || item.post_topic || "";
+                    const strategy = item.strategy || item.estrategia || "";
+                    const engagement = item.engagement || "Alto";
+                    
+                    return `
+                        <div class="trend-item" data-topic="${escapeHtml(topic)}" title="Haz clic para autocompletar este tema">
+                            <div class="trend-info">
+                                <span class="trend-topic" style="color: var(--primary); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">🔥 vs ${escapeHtml(competitor)}</span>
+                                <span class="trend-topic" style="font-size: 13px; font-weight: 500; margin-top: 4px; line-height: 1.4;">${escapeHtml(topic)}</span>
+                                <div class="trend-meta" style="margin-top: 6px;">
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4; border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 4px;">
+                                        <strong>Estrategia:</strong> ${escapeHtml(strategy)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="trend-stats" style="flex-direction: column; justify-content: center; align-items: flex-end;">
+                                <span class="trend-engagement" style="font-size: 11px; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${engagement}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+        }
+
+        // --- LISTENERS DE INTERFAZ & EVENTOS ---
+        
+        // Pestañas Principales (Navegación Superior)
+        mainTabBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                switchMainTab(btn.dataset.target);
+            });
+        });
+
+        // Formulario Competidores
+        addCompetitorBtn.addEventListener("click", () => {
+            competitorForm.reset();
+            document.getElementById("comp_id").value = "";
+            document.getElementById("competitorFormTitle").innerHTML = `<i class="fa-solid fa-user-plus"></i> Registrar Competidor`;
+            competitorFormContainer.style.display = competitorFormContainer.style.display === "none" ? "block" : "none";
+        });
+        cancelCompetitorBtn.addEventListener("click", () => {
+            competitorForm.reset();
+            document.getElementById("comp_id").value = "";
+            competitorFormContainer.style.display = "none";
+        });
+        competitorForm.addEventListener("submit", handleSaveCompetitor);
+
+        // Formulario Swipe File
+        addSwipeBtn.addEventListener("click", () => {
+            swipeForm.reset();
+            document.getElementById("swipe_id").value = "";
+            document.getElementById("swipe_date").value = new Date().toISOString().split('T')[0];
+            document.getElementById("swipeFormTitle").innerHTML = `<i class="fa-solid fa-cube"></i> Registrar en Swipe File`;
+            
+            // Re-escribir los textos de los sliders a 3 y 4 por defecto
+            document.getElementById("val_rep").innerText = "3";
+            document.getElementById("val_pers").innerText = "3";
+            document.getElementById("val_diff").innerText = "3";
+            document.getElementById("val_rel").innerText = "4";
+            document.getElementById("val_app").innerText = "4";
+            
+            swipeFormContainer.style.display = swipeFormContainer.style.display === "none" ? "block" : "none";
+        });
+        cancelSwipeBtn.addEventListener("click", () => {
+            swipeForm.reset();
+            document.getElementById("swipe_id").value = "";
+            swipeFormContainer.style.display = "none";
+        });
+        swipeForm.addEventListener("submit", handleSaveSwipe);
+
+        // Formulario Hipótesis
+        addHypothesisBtn.addEventListener("click", () => {
+            hypothesisForm.reset();
+            document.getElementById("hyp_id").value = "";
+            document.getElementById("hypothesisFormTitle").innerHTML = `<i class="fa-solid fa-circle-nodes"></i> Crear Hipótesis de Test`;
+            hypothesisFormContainer.style.display = hypothesisFormContainer.style.display === "none" ? "block" : "none";
+        });
+        cancelHypothesisBtn.addEventListener("click", () => {
+            hypothesisForm.reset();
+            document.getElementById("hyp_id").value = "";
+            hypothesisFormContainer.style.display = "none";
+        });
+        hypothesisForm.addEventListener("submit", handleSaveHypothesis);
+
+        // Formulario Briefings
+        addBriefBtn.addEventListener("click", () => {
+            briefForm.reset();
+            document.getElementById("brief_id").value = "";
+            document.getElementById("briefFormTitle").innerHTML = `<i class="fa-solid fa-file-invoice"></i> Nuevo Briefing de Campaña`;
+            briefFormContainer.style.display = briefFormContainer.style.display === "none" ? "block" : "none";
+        });
+        cancelBriefBtn.addEventListener("click", () => {
+            briefForm.reset();
+            document.getElementById("brief_id").value = "";
+            briefFormContainer.style.display = "none";
+        });
+        briefForm.addEventListener("submit", handleSaveBrief);
+
+        // Eventos Generación y Edición (Existentes)
+        generateForm.addEventListener("submit", handleGenerate);
+        generateBatchForm.addEventListener("submit", handleGenerateBatch);
+        saveBtn.addEventListener("click", handleSave);
+        saveBatchBtn.addEventListener("click", handleSaveBatch);
+        deleteBtn.addEventListener("click", handleDelete);
+        copyBtn.addEventListener("click", handleCopy);
+        logoutBtn.addEventListener("click", handleLogout);
+        filterPlatform.addEventListener("change", renderHistory);
+
+        // Delegación de click en tendencias para autocompletado
+        trendsSection.addEventListener("click", (e) => {
+            const trendItem = e.target.closest(".trend-item");
+            if (!trendItem) return;
+
+            const selectedTopic = trendItem.getAttribute("data-topic");
+            if (!selectedTopic) return;
+
+            if (state.currentTab === "single") {
+                topicInput.value = selectedTopic;
+                topicInput.focus();
+                topicInput.classList.add("highlight-pulse");
+                setTimeout(() => topicInput.classList.remove("highlight-pulse"), 800);
+            } else {
+                batchTopicInput.value = selectedTopic;
+                batchTopicInput.focus();
+                batchTopicInput.classList.add("highlight-pulse");
+                setTimeout(() => batchTopicInput.classList.remove("highlight-pulse"), 800);
+            }
+        });
+        exportCsvBtn.addEventListener("click", handleExportCsv);
+        exportHistoryCsvBtn.addEventListener("click", handleExportHistoryCsv);
+        refreshTrendsBtn.addEventListener("click", loadTrends);
+
+        // Clics en pestañas internas del publicador
+        singleTabBtn.addEventListener("click", () => switchTab("single"));
+        batchTabBtn.addEventListener("click", () => switchTab("batch"));
+
+        // Inicialización de la aplicación
+        async function init() {
+            setDefaultDate();
+            await checkAuth();
+            await loadPublications();
+            await loadTrends();
+            
+            // Cargar datos del SOP en segundo plano para poblar selectores
+            await loadCompetitors();
+            await loadHypotheses();
+            await loadCampaignBriefs();
+        }
+
+        init();
+    })();
+    </script>
+</body>
+</html>

@@ -1,4 +1,6 @@
 const ALLOWED_ORIGINS = new Set([
+    "https://www.alfonsoaikonta.com",
+    "https://alfonsoaikonta.com",
     "https://alfonso-landing.luis-devopslab.workers.dev"
 ]);
 

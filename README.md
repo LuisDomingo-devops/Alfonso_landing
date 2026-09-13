@@ -68,3 +68,22 @@ Se reduce ligeramente el tamaño general de la calculadora y se aumenta el contr
 ## V3.2 — Contraste alto
 
 Se aumenta de forma significativa el contraste entre fondos y textos de la calculadora. Se evita el blanco sobre gris claro y se utilizan fondos más oscuros, textos secundarios más luminosos y divisores más definidos.
+
+## V3.3 — Procesamiento de Facturas (OCR) y Contenedores
+
+Se corrigió la imagen Docker (`invoice_backend/Dockerfile`) para instalar dependencias de sistema necesarias para el OCR y procesamiento de imágenes (`tesseract-ocr` para español e inglés, y `poppler-utils` para la conversión de PDF escaneados).
+
+### Pasos de Despliegue en Producción:
+1. **Configurar el Secreto de la API de Gemini**:
+   Para que el Worker de producción pueda acceder a la API de Gemini, se debe añadir el secreto de entorno en Cloudflare:
+   ```bash
+   npx wrangler secret put GEMINI_API_KEY
+   ```
+   Introduce la clave de API válida cuando lo solicite el terminal.
+
+2. **Desplegar incluyendo Contenedores**:
+   Dado que los cambios en el Dockerfile afectan a la imagen del contenedor, no utilices `--containers-rollout=none`. Usa el comando con rollout inmediato:
+   ```bash
+   npm run deploy:immediate
+   ```
+

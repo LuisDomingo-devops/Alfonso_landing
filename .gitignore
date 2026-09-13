@@ -6,3 +6,28 @@ node_modules/
 !.env.example
 .DS_Store
 venv/
+graphify-out/
+tests/
+
+# --- Añadido durante la limpieza ---
+# Archivos de prueba
+factura_test.pdf
+
+# Bases de datos locales
+*.sqlite
+*.sqlite3
+
+# Python Cache y Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variables de entorno local y configuraciones de IDE
+.dev.vars
+.vscode/
+
+# Logs
+*.log
+
+# Marketing
+public/rrss/marketingskills/

@@ -19,8 +19,52 @@ import {
 } from "./adminLeads.js";
 
 import {
-    getContainer
-} from "@cloudflare/containers";
+    handleGuideChat,
+    handleAdminGuideStats
+} from "./geminiGuide.js";
+
+import {
+    sendBetaWelcomeEmail
+} from "./emailService.js";
+
+import {
+    handleRrssLogin,
+    handleRrssLogout,
+    handleRrssMe,
+    handleRrssGenerate,
+    handleRrssListPublications,
+    handleRrssCreatePublication,
+    handleRrssUpdatePublication,
+    handleRrssDeletePublication,
+    handleRrssGenerateBatch,
+    handleRrssCreatePublicationsBatch,
+    handleRrssGetTrends,
+    handleRrssGetCompetitors,
+    handleRrssCreateCompetitor,
+    handleRrssDeleteCompetitor,
+    handleRrssUpdateCompetitor,
+    handleRrssListSwipeFile,
+    handleRrssCreateSwipeFile,
+    handleRrssUpdateSwipeFile,
+    handleRrssDeleteSwipeFile,
+    handleRrssListHypotheses,
+    handleRrssCreateHypothesis,
+    handleRrssUpdateHypothesis,
+    handleRrssDeleteHypothesis,
+    handleRrssListCampaignBriefs,
+    handleRrssCreateCampaignBrief,
+    handleRrssUpdateCampaignBrief,
+    handleRrssDeleteCampaignBrief
+} from "./rrss.js";
+
+
+function getContainer(binding, name = "cf-singleton-container") {
+    if (!binding) {
+        throw new Error("Container binding not configured");
+    }
+    const objectId = binding.idFromName(name);
+    return binding.get(objectId);
+}
 
 
 const MAX_BODY_SIZE =
@@ -319,6 +363,8 @@ async function handleLead(
         );
     }
 
+    let isAlreadyRegistered = false;
+
     try {
 
         await env.alfonso_leads
@@ -359,33 +405,93 @@ async function handleLead(
             )
         ) {
 
-            return successResponse(
-                {
-                    message:
-                        "This email is already registered."
-                },
-                200
+            isAlreadyRegistered = true;
+
+        } else {
+
+            console.error(
+                "Error storing lead:",
+                error
+            );
+
+            return errorResponse(
+                "DATABASE_ERROR",
+                "Unable to store lead.",
+                500
             );
         }
+    }
+
+    /*
+     * Envío automático de correo de bienvenida y confirmación
+     * desde hola@alfonsoaikonta.com
+     */
+    let emailResult = null;
+
+    try {
+
+        emailResult =
+            await sendBetaWelcomeEmail(
+                {
+                    name: lead.name,
+                    email: lead.email
+                },
+                env
+            );
+
+        if (
+            emailResult?.success &&
+            env.alfonso_leads
+        ) {
+
+            try {
+
+                await env.alfonso_leads
+                    .prepare(
+                        `
+                        UPDATE leads
+                        SET confirmation_email_sent = 1,
+                            confirmation_email_sent_at = ?,
+                            confirmation_email_provider = ?
+                        WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+                        `
+                    )
+                    .bind(
+                        new Date().toISOString(),
+                        emailResult.provider || "dev_mock",
+                        lead.email
+                    )
+                    .run();
+
+            } catch (updateErr) {
+
+                console.warn(
+                    "Could not update confirmation email columns:",
+                    updateErr.message
+                );
+            }
+        }
+
+    } catch (emailErr) {
 
         console.error(
-            "Error storing lead:",
-            error
-        );
-
-        return errorResponse(
-            "DATABASE_ERROR",
-            "Unable to store lead.",
-            500
+            "Error in welcome email dispatch:",
+            emailErr
         );
     }
 
     return successResponse(
         {
             message:
-                "Lead received successfully."
+                isAlreadyRegistered
+                    ? "This email is already registered."
+                    : "Lead received successfully.",
+            emailSent:
+                Boolean(
+                    emailResult?.success
+                )
         },
-        202
+        isAlreadyRegistered ? 200 : 202
     );
 }
 
@@ -545,6 +651,26 @@ export async function handleApiRequest(
 
     if (
         url.pathname ===
+        "/api/guide/chat"
+    ) {
+        return handleGuideChat(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/admin/guide/stats"
+    ) {
+        return handleAdminGuideStats(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
         "/api/admin/leads"
     ) {
 
@@ -570,6 +696,255 @@ export async function handleApiRequest(
                 leadIdMatch[1]
             )
         );
+    }
+
+    // --- Rutas de RRSS ---
+    if (
+        url.pathname ===
+        "/api/rrss/login"
+    ) {
+        return handleRrssLogin(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/logout"
+    ) {
+        return handleRrssLogout(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/me"
+    ) {
+        return handleRrssMe(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/generate"
+    ) {
+        return handleRrssGenerate(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/generate-batch"
+    ) {
+        return handleRrssGenerateBatch(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/publications/batch" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreatePublicationsBatch(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/trends" &&
+        request.method === "GET"
+    ) {
+        return handleRrssGetTrends(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/competitors" &&
+        request.method === "GET"
+    ) {
+        return handleRrssGetCompetitors(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/competitors" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreateCompetitor(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/competitors/") &&
+        request.method === "PUT"
+    ) {
+        return handleRrssUpdateCompetitor(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/competitors/") &&
+        request.method === "DELETE"
+    ) {
+        return handleRrssDeleteCompetitor(
+            request,
+            env
+        );
+    }
+
+    // --- Rutas de Swipe File (rrss_swipe_file) ---
+    if (
+        url.pathname === "/api/rrss/swipe-file" &&
+        request.method === "GET"
+    ) {
+        return handleRrssListSwipeFile(request, env);
+    }
+
+    if (
+        url.pathname === "/api/rrss/swipe-file" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreateSwipeFile(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/swipe-file/") &&
+        request.method === "PUT"
+    ) {
+        return handleRrssUpdateSwipeFile(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/swipe-file/") &&
+        request.method === "DELETE"
+    ) {
+        return handleRrssDeleteSwipeFile(request, env);
+    }
+
+    // --- Rutas de Hipótesis (rrss_hypotheses) ---
+    if (
+        url.pathname === "/api/rrss/hypotheses" &&
+        request.method === "GET"
+    ) {
+        return handleRrssListHypotheses(request, env);
+    }
+
+    if (
+        url.pathname === "/api/rrss/hypotheses" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreateHypothesis(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/hypotheses/") &&
+        request.method === "PUT"
+    ) {
+        return handleRrssUpdateHypothesis(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/hypotheses/") &&
+        request.method === "DELETE"
+    ) {
+        return handleRrssDeleteHypothesis(request, env);
+    }
+
+    // --- Rutas de Campaign Briefs (rrss_campaign_briefs) ---
+    if (
+        url.pathname === "/api/rrss/campaign-briefs" &&
+        request.method === "GET"
+    ) {
+        return handleRrssListCampaignBriefs(request, env);
+    }
+
+    if (
+        url.pathname === "/api/rrss/campaign-briefs" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreateCampaignBrief(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/campaign-briefs/") &&
+        request.method === "PUT"
+    ) {
+        return handleRrssUpdateCampaignBrief(request, env);
+    }
+
+    if (
+        url.pathname.startsWith("/api/rrss/campaign-briefs/") &&
+        request.method === "DELETE"
+    ) {
+        return handleRrssDeleteCampaignBrief(request, env);
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/publications" &&
+        request.method === "GET"
+    ) {
+        return handleRrssListPublications(
+            request,
+            env
+        );
+    }
+
+    if (
+        url.pathname ===
+        "/api/rrss/publications" &&
+        request.method === "POST"
+    ) {
+        return handleRrssCreatePublication(
+            request,
+            env
+        );
+    }
+
+    const rrssPubIdMatch =
+        url.pathname.match(
+            /^\/api\/rrss\/publications\/(\d+)$/
+        );
+
+    if (
+        rrssPubIdMatch
+    ) {
+        const pubId = Number(rrssPubIdMatch[1]);
+        if (request.method === "PUT") {
+            return handleRrssUpdatePublication(
+                request,
+                env,
+                pubId
+            );
+        }
+        if (request.method === "DELETE") {
+            return handleRrssDeletePublication(
+                request,
+                env,
+                pubId
+            );
+        }
     }
 
     return errorResponse(

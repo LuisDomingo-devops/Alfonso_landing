@@ -65,7 +65,7 @@ ADDRESS_LABEL_PATTERN = re.compile(
     r"domicilio fiscal|calle|avenida|"
     r"avda\.?|c\/|cp|código postal|"
     r"codigo postal)"
-    r"\s*[:\-].*$",
+    r"[\s:\-]+.*$",
     re.IGNORECASE,
 )
 
@@ -73,12 +73,14 @@ PERSON_LABEL_PATTERN = re.compile(
     r"^\s*"
     r"(cliente|titular|contacto|"
     r"persona de contacto|"
-    r"nombre|razón social|razon social|"
+    r"nombre(?:\s+y\s+\w+)?|"
+    r"razón social|razon social|"
     r"emisor|receptor|proveedor|"
     r"destinatario)"
-    r"\s*[:\-].*$",
+    r"[\s:\-]+.*$",
     re.IGNORECASE,
 )
+
 
 
 def extract_pdf_text(
@@ -253,6 +255,8 @@ def anonymize_text(
 
     anonymized_lines = []
 
+    next_line_is_person = False
+
     for line in lines:
 
         stripped = line.strip()
@@ -261,18 +265,30 @@ def anonymize_text(
             anonymized_lines.append("")
             continue
 
+        if next_line_is_person:
+            anonymized_lines.append("[PERSONA_ANONIMIZADA]")
+            next_line_is_person = False
+            continue
+
+        if re.match(
+            r"^(datos de client[ea]|cliente|receptor|destinatario|datos del receptor)$",
+            stripped,
+            re.IGNORECASE,
+        ):
+            anonymized_lines.append(line)
+            next_line_is_person = True
+            continue
+
         if ADDRESS_LABEL_PATTERN.match(stripped):
             anonymized_lines.append(
                 "[DIRECCION_ANONIMIZADA]"
             )
             continue
 
-        if PERSON_LABEL_PATTERN.match(stripped):
+        person_match = PERSON_LABEL_PATTERN.match(stripped)
+        if person_match:
 
-            label = stripped.split(
-                ":",
-                1,
-            )[0].strip()
+            label = person_match.group(1).strip()
 
             anonymized_lines.append(
                 f"{label}: [PERSONA_ANONIMIZADA]"
@@ -334,10 +350,10 @@ IMPORTANTE:
 - No recibes la factura original.
 - Los datos personales han sido
   anonimizados antes de llegar a ti.
+- Si un campo (como el NIF o el nombre del emisor/receptor) está presente en la factura pero aparece reemplazado por un marcador de anonimización (como "[DNI_ANONIMIZADO]", "[NIF_ANONIMIZADO]", "[PERSONA_ANONIMIZADA]", etc.), debes devolver ese marcador exacto en el JSON (por ejemplo: "tax_id": "[DNI_ANONIMIZADO]") en lugar de devolver null. Solo devuelve null si el dato no aparece de ninguna forma en el documento.
 - No intentes reconstruir identidades.
 - No inventes información.
-- No conviertas marcadores anonimizados
-  en nombres reales.
+- No conviertas marcadores anonimizados en nombres reales.
 
 Debes interpretar el contenido disponible.
 
@@ -437,6 +453,10 @@ como un hecho confirmado.
 La respuesta debe parecer una explicación
 de Alfonso a un cliente,
 no un informe técnico.
+
+IMPORTANTE SOBRE PRIVACIDAD:
+Si en los DATOS EXTRAÍDOS ves marcadores como "[PERSONA_ANONIMIZADA]" o "[DNI_ANONIMIZADO]", esto indica que el nombre y el NIF del receptor SÍ estaban presentes y se detectaron correctamente en la factura original (pero fueron protegidos por privacidad antes de llegar a ti). Por lo tanto, NO le digas al usuario que la factura que ha subido está anonimizada ni que no tiene sus datos. Dile que has detectado correctamente sus datos fiscales del receptor en la factura y recuérdale verificar que en su documento original (el que guarde para su contabilidad) coincidan con sus datos oficiales de alta.
+
 
 DATOS EXTRAÍDOS:
 

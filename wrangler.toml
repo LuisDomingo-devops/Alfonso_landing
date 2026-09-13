@@ -1,4 +1,4 @@
-﻿name = "alfonso-landing"
+name = "alfonso-landing"
 
 main = "worker/index.js"
 
@@ -7,6 +7,13 @@ compatibility_date = "2026-08-14"
 compatibility_flags = [
     "nodejs_compat"
 ]
+
+
+[dev]
+enable_containers = false
+
+[[send_email]]
+name = "EMAIL"
 
 [assets]
 directory = "./public"
@@ -42,5 +49,5 @@ new_sqlite_classes = [
 ]
 
 [vars]
-
 GEMINI_MODEL_NAME = "gemini-3.1-flash-lite"
+DEFAULT_FROM_EMAIL = "Alfonso AI Konta <hola@alfonsoaikonta.com>"
