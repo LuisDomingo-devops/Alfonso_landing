@@ -32,15 +32,21 @@ class GeminiClient:
     def _generate(
         self,
         prompt: str,
+        is_json: bool = False,
     ) -> str:
+
+        config_args = {
+            "temperature": 0.0,
+        }
+        
+        if is_json:
+            config_args["response_mime_type"] = "application/json"
 
         response = (
             self.client.models.generate_content(
                 model=self.model,
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                ),
+                config=types.GenerateContentConfig(**config_args),
             )
         )
 
@@ -72,7 +78,8 @@ class GeminiClient:
         )
 
         response = self._generate(
-            prompt
+            prompt,
+            is_json=True,
         )
 
         response = (

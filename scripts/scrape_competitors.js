@@ -339,7 +339,8 @@ INSERT INTO rrss_competitors (
 
     try {
         writeFileSync(TEMP_SQL_PATH, sqlQueries, "utf-8");
-        execSync(`npx wrangler d1 execute alfonso-leads --local --file=${TEMP_SQL_PATH}`, { stdio: "inherit" });
+        const executionMode = process.env.CI ? '--remote' : '--local';
+        execSync(`npx wrangler d1 execute alfonso-leads ${executionMode} --file=${TEMP_SQL_PATH}`, { stdio: "inherit" });
         console.log("[SCRAPER] Importación SQL finalizada con éxito.");
     } catch (dbErr) {
         console.error("[SCRAPER] Error ejecutando importación SQL en D1:", dbErr.message);

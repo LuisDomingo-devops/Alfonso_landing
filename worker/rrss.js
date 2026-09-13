@@ -34,7 +34,14 @@ ESTRATEGIA TEMÁTICA Y FORMATO POR PLATAFORMA (SEO SOCIAL):
 - LinkedIn: Enfoque corporativo y profesional. Temáticas de digitalización, productividad, análisis de normativas fiscales, optimización de costes y marca personal. Estructura con gancho SEO potente ("scroll stopper"), desarrollo con viñetas espaciadas y llamada a la acción profesional.
 - X/Twitter: Enfoque conversacional, directo y ágil. Hilos rápidos, debates o reflexiones sobre la burocracia en España, consejos cortos accionables y empatía/humor de autónomos. Copys muy breves (<280 caracteres), con hashtags de alta conversión integrados en el texto.
 - Instagram: Enfoque educativo y visual. Explicaciones paso a paso tipo carrusel (ej: "Cómo deducir tu internet como autónomo", "3 errores al facturar"), tips prácticos, uso de emojis estructurado y bloque de hashtags estratégicos al final.
-- Facebook: Enfoque comunitario y cercano. Historias reales de emprendedores, preguntas interactivas que inviten a comentar (ej: "¿Cómo llevas el papeleo de este trimestre?") y explicaciones sencillas y amigables.`;
+- Facebook: Enfoque comunitario y cercano. Historias reales de emprendedores, preguntas interactivas que inviten a comentar (ej: "¿Cómo llevas el papeleo de este trimestre?") y explicaciones sencillas y amigables.
+
+FRAMEWORKS DE COPYWRITING (MARKETING SKILLS):
+La primera frase determina si alguien lee el resto (Scroll Stopper). Usa estas fórmulas para abrir tus posts:
+1. Ganchos de Curiosidad: "Estaba equivocado sobre [creencia de Hacienda/Autónomos]", "La verdadera razón por la que [problema] ocurre no es la que piensas".
+2. Ganchos de Historia: "La semana pasada me pasó esto...", "Hace 3 años yo... Hoy...".
+3. Ganchos de Valor: "Cómo conseguir [resultado] sin [dolor común]", "Deja de cometer este error al facturar. Haz esto en su lugar".
+4. Ganchos Contrarians: "Opinión impopular: [afirmación audaz sobre gestorías]", "[Consejo común] es falso. Aquí el por qué".`;
 
 // --- Utilitarios de Sesión y Criptografía ---
 
@@ -599,7 +606,33 @@ export async function handleRrssGenerateBatch(request, env) {
         return errorResponse("INVALID_JSON", "Request body must be valid JSON.", 400);
     }
 
-    const { platforms, topic, tone, month, year, countPerPlatform = 4, trends, campaignBriefId = null } = body || {};
+    let { platforms, topic, tone, month, year, countPerPlatform = 4, trends, campaignBriefId = null } = body || {};
+
+    // Automatización Scraping: Consultar competidores directamente de D1 si no vienen en trends
+    let finalTrends = trends || { monthlyTrends: [], weeklyTrends: [], competitorAnalysis: [] };
+    if (!finalTrends.competitorAnalysis) finalTrends.competitorAnalysis = [];
+
+    try {
+        const topCompetitors = await env.alfonso_leads
+            .prepare("SELECT * FROM rrss_competitors ORDER BY scraped_at DESC LIMIT 5")
+            .all();
+        
+        if (topCompetitors && topCompetitors.results && topCompetitors.results.length > 0) {
+            // Si la llamada no traía competidores, inyectamos los de la BBDD
+            if (finalTrends.competitorAnalysis.length === 0) {
+                for (const comp of topCompetitors.results) {
+                    finalTrends.competitorAnalysis.push({
+                        competitor: comp.name,
+                        postTopic: comp.services_offered || "Servicios fiscales",
+                        engagement: `Seguidores -> IG: ${comp.instagram_followers || 'N/A'}, TT: ${comp.tiktok_followers || 'N/A'}, YT: ${comp.youtube_followers || 'N/A'}`,
+                        strategy: `Diseño: ${comp.web_design_notes}. Dirigido a: ${comp.target_audience || 'Autónomos'}.`
+                    });
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching competitors for LLM batch:", err);
+    }
 
     const apiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY || null;
     if (!apiKey) {
@@ -681,11 +714,15 @@ Asegúrate de que la propiedad 'day' sea un número entero válido (del 1 al 28)
 ${briefContext}`;
 
     let trendsPromptSection = "";
-    if (trends && (Array.isArray(trends.monthlyTrends) || Array.isArray(trends.weeklyTrends))) {
+    if (finalTrends && (
+        (Array.isArray(finalTrends.monthlyTrends) && finalTrends.monthlyTrends.length > 0) || 
+        (Array.isArray(finalTrends.weeklyTrends) && finalTrends.weeklyTrends.length > 0) ||
+        (Array.isArray(finalTrends.competitorAnalysis) && finalTrends.competitorAnalysis.length > 0)
+    )) {
         let competitorSection = "";
-        if (Array.isArray(trends.competitorAnalysis) && trends.competitorAnalysis.length > 0) {
+        if (Array.isArray(finalTrends.competitorAnalysis) && finalTrends.competitorAnalysis.length > 0) {
             competitorSection = `\nEstrategias y Estructuras Exitosas de la Competencia para emular:
-${trends.competitorAnalysis.map(c => `  * Competidor: "${c.competitor}" | Tema Exitoso: "${c.postTopic}" | Engagement: ${c.engagement} | Estructura/Fórmula recomendada: "${c.strategy}"`).join("\n")}
+${finalTrends.competitorAnalysis.map(c => `  * Competidor: "${c.competitor}" | Tema Exitoso: "${c.postTopic}" | Engagement: ${c.engagement} | Estructura/Fórmula recomendada: "${c.strategy}"`).join("\n")}
 
 Instrucciones de emulación competitiva:
 - Analiza el estilo, formato visual, distribución del copy y ganchos de persuasión de las publicaciones exitosas de la competencia listadas arriba.
@@ -694,9 +731,9 @@ Instrucciones de emulación competitiva:
 
         trendsPromptSection = `\nDistribución de Temas Populares en el Nicho de Autónomos España para este mes:
 - Tendencias del Mes:
-${(trends.monthlyTrends || []).map(t => `  * Tema: "${t.topic}" | Sentiment: ${t.sentiment} | Engagement Estimado: ${t.engagementRate} | Canal Recomendado: ${t.bestPlatform} | Popularidad (Likes/Comments): ${t.avgLikes}/${t.avgComments} | Tendencia: ${t.status}`).join("\n")}
+${(finalTrends.monthlyTrends || []).map(t => `  * Tema: "${t.topic}" | Sentiment: ${t.sentiment} | Engagement Estimado: ${t.engagementRate} | Canal Recomendado: ${t.bestPlatform} | Popularidad (Likes/Comments): ${t.avgLikes}/${t.avgComments} | Tendencia: ${t.status}`).join("\n")}
 - Tendencias de la Semana:
-${(trends.weeklyTrends || []).map(t => `  * Tema: "${t.topic}" | Sentiment: ${t.sentiment} | Engagement Estimado: ${t.engagementRate} | Canal Recomendado: ${t.bestPlatform} | Popularidad (Likes/Comments): ${t.avgLikes}/${t.avgComments} | Tendencia: ${t.status}`).join("\n")}
+${(finalTrends.weeklyTrends || []).map(t => `  * Tema: "${t.topic}" | Sentiment: ${t.sentiment} | Engagement Estimado: ${t.engagementRate} | Canal Recomendado: ${t.bestPlatform} | Popularidad (Likes/Comments): ${t.avgLikes}/${t.avgComments} | Tendencia: ${t.status}`).join("\n")}
 ${competitorSection}
 
 Instrucciones para la distribución de temas:

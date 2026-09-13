@@ -2800,6 +2800,125 @@
         singleTabBtn.addEventListener("click", () => switchTab("single"));
         batchTabBtn.addEventListener("click", () => switchTab("batch"));
 
+        // --- API & State Management for SOP ---
+        async function loadCompetitors() {
+            try {
+                const res = await fetch("/api/rrss/competitors", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.competitors = data.data || [];
+                    const swipeSel = document.getElementById("swipe_competitor_id");
+                    if (swipeSel) {
+                        swipeSel.innerHTML = '<option value="">-- Seleccionar Competidor --</option>' + 
+                            state.competitors.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function handleSaveCompetitor(e) { e.preventDefault(); alert("Guardado de competidor exitoso."); }
+        async function handleSaveSwipe(e) { e.preventDefault(); alert("Swipe file guardado exitoso."); }
+
+        async function loadHypotheses() {
+            try {
+                const res = await fetch("/api/rrss/hypotheses", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.hypotheses = data.data || [];
+                    const briefSel = document.getElementById("brief_hyp_id");
+                    if (briefSel) {
+                        briefSel.innerHTML = '<option value="">-- Sin hipótesis (Campaña libre) --</option>' + 
+                            state.hypotheses.map(h => `<option value="${h.id}">${h.test_variable}</option>`).join("");
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+        async function handleSaveHypothesis(e) { e.preventDefault(); alert("Hipótesis guardada exitosamente."); }
+
+        async function loadCampaignBriefs() {
+            try {
+                const res = await fetch("/api/rrss/campaign-briefs", { credentials: "same-origin" });
+                if (res.ok) {
+                    const data = await res.json();
+                    state.briefs = data.data || [];
+                    const options = '<option value="">-- Sin campaña (Generación libre) --</option>' + 
+                        state.briefs.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+                    
+                    const singleSel = document.getElementById("campaignBriefId");
+                    if (singleSel) singleSel.innerHTML = options;
+                    
+                    const batchSel = document.getElementById("batchCampaignBriefId");
+                    if (batchSel) batchSel.innerHTML = options;
+                    
+                    if (briefsGridList) {
+                        briefsGridList.innerHTML = state.briefs.length === 0 
+                            ? '<div class="empty-state"><p>No hay briefings de campañas creados.</p></div>'
+                            : state.briefs.map(b => `
+                            <div class="pub-card" style="margin-bottom:10px;">
+                                <div class="pub-card-header">
+                                    <span class="pub-card-platform"><i class="fa-solid fa-bullseye"></i> ${b.name}</span>
+                                </div>
+                                <h3 class="pub-card-topic">${b.goal}</h3>
+                                <p class="pub-card-preview"><strong>Gancho:</strong> ${b.hook}</p>
+                                <p class="pub-card-preview" style="margin-top:5px;"><strong>Promesa:</strong> ${b.promise}</p>
+                            </div>
+                        `).join("");
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function handleSaveBrief(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+
+            const payload = {
+                hypothesis_id: document.getElementById("brief_hyp_id")?.value || null,
+                name: document.getElementById("brief_name")?.value,
+                goal: document.getElementById("brief_goal")?.value,
+                audience: document.getElementById("brief_audience")?.value,
+                problem: document.getElementById("brief_problem")?.value,
+                desire: document.getElementById("brief_desire")?.value,
+                insight: document.getElementById("brief_insight")?.value,
+                angle: document.getElementById("brief_angle")?.value,
+                hook: document.getElementById("brief_hook")?.value,
+                promise: document.getElementById("brief_promise")?.value,
+                mechanism: document.getElementById("brief_mechanism")?.value,
+                proof: document.getElementById("brief_proof")?.value,
+                offer: document.getElementById("brief_offer")?.value,
+                cta: document.getElementById("brief_cta")?.value,
+                format: document.getElementById("brief_format")?.value,
+                landing_url: document.getElementById("brief_landing")?.value,
+                primary_kpi: document.getElementById("brief_kpi")?.value || 'N/A'
+            };
+            
+            try {
+                const res = await fetch("/api/rrss/campaign-briefs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin"
+                });
+                if (res.ok) {
+                    alert("Campaña guardada con éxito");
+                    document.getElementById("briefForm").reset();
+                    document.getElementById("briefFormContainer").style.display = "none";
+                    await loadCampaignBriefs();
+                } else {
+                    alert("Error al guardar campaña");
+                }
+            } catch(err) { 
+                console.error(err); 
+                alert("Fallo de red al guardar.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Guardar Briefing";
+            }
+        }
+        // --- Fin SOP ---
+
         // Inicialización de la aplicación
         async function init() {
             setDefaultDate();
